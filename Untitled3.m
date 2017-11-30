@@ -1,0 +1,1 @@
+generate_skinmap('20160706_150139.jpg');
