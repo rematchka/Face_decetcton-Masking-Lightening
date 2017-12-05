@@ -3,7 +3,7 @@ file2='download.jpg';
 file3='FB_IMG_1455471797813.jpg';
 file4='20161223_163424.jpg';
 file5='mariam.jpg';
-I=imread(file5);
+I=imread(file2);
 
 ggg=I;
 I=double(I);
@@ -77,8 +77,9 @@ im(:,:,3)=I(:,:,3).*segment;
 figure,title('segment');imshow((segment));
 %se=strel('disk',11);
 %se=strel('ball',5,5);
+%se = strel('diamond',14);
+se=strel('disk',12);
 
-se=strel('disk',9);
 dilate=imdilate(segment,se);
 erode=imerode(dilate,se);
 
@@ -115,9 +116,10 @@ im1(:,:,3)=ggg(:,:,3).*uint8(dilate);
 
 figure
 imshow(im1);
-maskedRgbImage = bsxfun(@times, ggg, cast(erode, 'like', ggg));
+maskedRgbImage = bsxfun(@times, ggg, cast(handImage, 'like', ggg));
 figure
 imshow(maskedRgbImage);
+
 
 YIQ = rgb2ntsc(im1);
 YCBCR = rgb2ycbcr(im1);
@@ -129,7 +131,17 @@ se=strel('rectangle',[9 9]);
 dilate=imdilate(Ichannel,se);
 erode=imerode(dilate,se);
 figure
-imshow(erode);
+imshow(erode);title('erode')
+
+erode=erode>0;
+dilate=dilate>0;
+maskedRgbImage1 = bsxfun(@times, ggg, cast(erode, 'like', ggg));
+figure
+imshow(maskedRgbImage1);
+
+
+
+
 
 
 
@@ -137,7 +149,7 @@ Eyemap=(1-(double(CR).^2).*(1-double(Ichannel)));
 figure
 imshow(Ichannel);
 immm=Ichannel>=1 ;
-disp(Ichannel);
+
 figure
 imshow(immm);
 
@@ -145,11 +157,6 @@ imshow(immm);
 imgcanny=edge(cb,'canny');
 figure
 imshow(imgcanny);
-
-
-
-
-
 
 
 

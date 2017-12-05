@@ -37,10 +37,10 @@ function [OUT] = colorConstancy(I, algorithm, varargin)
             OUT = uint8(OUT);
         case 'modified white patch'
             if (~isempty(varargin))
-                disp(varargin);
+                
                 
                 th = varargin{1};
-                disp(varargin{1});
+               
                 
                 R=I(:,:,1); disp(R(R>th));Kr = 255/mean(R(R>th));
                 G=I(:,:,2); Kg = 255/mean(G(G>th));
@@ -124,6 +124,7 @@ function [OUT] = colorConstancy(I, algorithm, varargin)
             R3=colorConstancy(I,'single scale retinex',240);
             OUT=(1/3)*R1+(1/3)*R2+(1/3)*R3;
         case 'MSRCR'
+            disp(length(varargin)>1);
             if (length(varargin)>1)
               alpha=varargin{1};
               betha=varargin{2};
