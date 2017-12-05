@@ -152,8 +152,21 @@
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="20161223_163424.jpg" />
+    <Image Include="cowboy_hat.png" />
+    <Image Include="dog_filter.png" />
+    <Image Include="dog_left_ear.png" />
+    <Image Include="dog_nose.png" />
+    <Image Include="dog_right_ear.png" />
+    <Image Include="download (3).jpg" />
+    <Image Include="download (4).jpg" />
     <Image Include="download.jpg" />
+    <Image Include="FB_IMG_1455471797813.jpg" />
     <Image Include="FB_IMG_1463846848502.jpg" />
+    <Image Include="flower_crown.png" />
+    <Image Include="mariam1.jpg" />
+    <Image Include="moustache.png" />
+    <Image Include="mustache1.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

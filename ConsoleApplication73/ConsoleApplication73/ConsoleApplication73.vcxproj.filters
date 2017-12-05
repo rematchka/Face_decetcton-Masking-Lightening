@@ -26,5 +26,44 @@
     <Image Include="download.jpg">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="20161223_163424.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="FB_IMG_1455471797813.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="mariam1.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="download (3).jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="download (4).jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="moustache.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="mustache1.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="flower_crown.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="cowboy_hat.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="dog_filter.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="dog_nose.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="dog_left_ear.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="dog_right_ear.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

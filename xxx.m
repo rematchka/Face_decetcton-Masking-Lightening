@@ -1,7 +1,7 @@
 
 
-I=imread('download.jpg');
+I=imread('FB_IMG_1463846848502.jpg');
 
-J = colorConstancy(I, 'modified white patch', 200);
+J = colorConstancy(I, 'single scale retinex', 100);
 figure
 imshow(J);

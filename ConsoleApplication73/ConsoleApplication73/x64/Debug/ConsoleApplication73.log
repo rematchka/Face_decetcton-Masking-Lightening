@@ -1,5 +1,9 @@
 ﻿  Source.cpp
-c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(71): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(72): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-  ConsoleApplication73.vcxproj -> c:\users\extra\documents\visual studio 2015\Projects\ConsoleApplication73\x64\Debug\ConsoleApplication73.exe
-  ConsoleApplication73.vcxproj -> c:\users\extra\documents\visual studio 2015\Projects\ConsoleApplication73\x64\Debug\ConsoleApplication73.pdb (Full PDB)
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(78): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(79): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(499): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(532): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(588): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(589): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+  ConsoleApplication73.vcxproj -> C:\Users\extra\documents\visual studio 2015\Projects\ConsoleApplication73\x64\Debug\ConsoleApplication73.exe
+  ConsoleApplication73.vcxproj -> C:\Users\extra\documents\visual studio 2015\Projects\ConsoleApplication73\x64\Debug\ConsoleApplication73.pdb (Full PDB)

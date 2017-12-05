@@ -7,28 +7,42 @@ function [OUT] = colorConstancy(I, algorithm, varargin)
     switch (algorithm)
         case 'grey world'
             Rmean      = sum(sum(I(:,:,1)))/(m*n);
+            disp(Rmean);
             Gmean      = sum(sum(I(:,:,2)))/(m*n);
+             disp(Gmean);
             Bmean      = sum(sum(I(:,:,3)))/(m*n);
+             disp(Bmean);
             Avg        = mean([Rmean Gmean Bmean]);
+             disp(Avg);
             Kr         = Avg/Rmean;
+            disp(Kr);
             Kg         = Avg/Gmean;
+            disp(Kg);
             Kb         = Avg/Bmean;
+            disp(Kb);
             OUT(:,:,1) = Kr*double(I(:,:,1));
             OUT(:,:,2) = Kg*double(I(:,:,2));
             OUT(:,:,3) = Kb*double(I(:,:,3));
             OUT = uint8(OUT);
         case 'white patch'
             Kr = 255/max(max(double(I(:,:,1))));
+             disp(Kr);
             Kg = 255/max(max(double(I(:,:,2))));
+            disp(Kg);
             Kb = 255/max(max(double(I(:,:,3))));
+            disp(Kb);
             OUT(:,:,1) = Kr*double(I(:,:,1));
             OUT(:,:,2) = Kg*double(I(:,:,2));
             OUT(:,:,3) = Kb*double(I(:,:,3));
             OUT = uint8(OUT);
         case 'modified white patch'
             if (~isempty(varargin))
+                disp(varargin);
+                
                 th = varargin{1};
-                R=I(:,:,1); Kr = 255/mean(R(R>th));
+                disp(varargin{1});
+                
+                R=I(:,:,1); disp(R(R>th));Kr = 255/mean(R(R>th));
                 G=I(:,:,2); Kg = 255/mean(G(G>th));
                 B=I(:,:,3); Kb = 255/mean(B(B>th));
                 OUT(:,:,1) = Kr*double(I(:,:,1));
