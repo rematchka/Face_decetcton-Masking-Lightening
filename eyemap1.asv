@@ -35,13 +35,13 @@ ssCrCb=sum(sum(CrCb));
 eta = 0.95 * ssCRS/ssCrCb;
 x= CRS - eta * CrCb;
 MM = CRS.*x.*x;
-g = strel('disk',1, 8);
+
 SE=strel('disk',4) ;
 disp(SE);
-UP=imdilate(y,g);
-Down=imerode(y,g);
-EyeY= UP./(Down+1);
-EyeC = histeq(EyeC);
+UP=imdilate(y,SE);
+Down=imerode(y,SE);
+EyeY= UP./(Down);
+EyeC = histeq(eyeMapC);
 EyeMap=EyeY.*EyeC;
 colormap(gray);
 

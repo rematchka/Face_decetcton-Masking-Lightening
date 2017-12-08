@@ -149,6 +149,7 @@ void eye_map(Mat& face_image)
 		Mat G = cv::Mat(cb / cr);
 		Mat CrCb = cv::Mat(cr / cb);
 		Mat	EyeC = (Q + R + G) / 3;
+	//	equalizeHist(EyeC, EyeC);
 		Mat CRS; pow(cr, 2, CRS);
 		Scalar	ssCRS = sum(sum(CRS));
 		Scalar ssCrCb = sum(sum(CrCb));
@@ -406,9 +407,9 @@ void mouth_map(Mat I)
 		//Mat img = imread("ssss.png");
 		Mat ttt = I;
 
-		ttt.convertTo(ttt, CV_32FC3);
+		//ttt.convertTo(ttt, CV_32FC3);
 		vector<Mat> channells1;
-		cv::Mat iycbcr = cv::Mat::zeros(I.size(), CV_32FC3);
+		cv::Mat iycbcr ;
 		/*split(ttt, channells1);
 		Mat I0 = channells1[0];
 		Mat I1 = channells1[1];
@@ -421,6 +422,7 @@ void mouth_map(Mat I)
 		I2 = I2 / 255.0;*/
 		//Mat iycbcr;
 		cvtColor(ttt, iycbcr, CV_BGR2YCrCb);
+		iycbcr.convertTo(iycbcr, CV_32FC3, 1.0 / 255.0);
 		vector<Mat> channels1;
 		split(iycbcr, channels1);
 		Mat y = channels1[0];
@@ -538,7 +540,7 @@ void mouth_map(Mat I)
 		mat.at<uchar>(8, 7) = 0;
 		mat.at<uchar>(8, 8) = 0;
 		/// Apply the specified morphology operation
-		morphologyEx(EnLip, dst, operation, mat);
+		morphologyEx(Mouthmap, dst, operation, mat);
 		Mat img_bw;
 		imshow(" morphing image", dst);
 		waitKey(0);
@@ -556,11 +558,17 @@ void mouth_map(Mat I)
 
 		imshow(" otsu image", img_bw);
 		waitKey(0);
+		//best valueeeeee/////////////////////////////////////////////////
 		cv::threshold(x, img_bw, 0, 255, CV_THRESH_BINARY);
 
 		imshow(" threshold image", img_bw);
 		waitKey(0);
 
+		cv::threshold(x, img_bw, 0, 255, CV_THRESH_BINARY| THRESH_OTSU);
+
+		imshow(" threshold image otus", img_bw);
+		waitKey(0);
+//////////////////////////////////////////////////////
 		cv::threshold(dst, img_bw, thresh, 255, CV_THRESH_BINARY );
 
 		imshow(" ther image", img_bw);
@@ -820,8 +828,9 @@ void face_detection_manually()
 
 		waitKey(0);
 
-		//eye_map(out);
-		mouth_map(out);
+		eye_map(out);
+	//	mouth_map(out);
+		///////////////////////////////////works better than eye map so use it/////////////////////
 		//another_eye_map(out);
 
 

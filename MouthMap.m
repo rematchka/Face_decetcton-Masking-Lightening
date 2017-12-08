@@ -1,18 +1,19 @@
 I=imread('ssss.png');
 hsv=rgb2hsv(I);
-I=double(I);
+%I=double(I);
 %I=imread(frame);
 
 img = rgb2ycbcr(I);
-y = double(img(:,:,1));
-Cb = double(img(:,:,2));
+img=im2double(img);
+y = (img(:,:,1));
+Cb =(img(:,:,2));
 fid = fopen('cbb.txt','wt');
 for ii = 1:size(Cb,1)
    fprintf(fid,'%g\t',Cb(ii,:));
   fprintf(fid,'\n');
 end
 
-Cr = double(img(:,:,3));
+Cr =(img(:,:,3));
 fid = fopen('crr.txt','wt');
 for ii = 1:size(Cr,1)
    fprintf(fid,'%g\t',Cr(ii,:));
@@ -29,14 +30,14 @@ end
 
 l=sum(sum(x));
 disp(l);
-ll=Cr/Cb;
+ll=Cr./Cb;
 fid = fopen('div.txt','wt');
 for ii = 1:size(ll,1)
    fprintf(fid,'%g\t',ll(ii,:));
   fprintf(fid,'\n');
 end
 
-w=sum(sum(Cr/Cb));
+w=sum(sum(Cr./Cb));
 
  eitha=0.95*(l/w);
  disp(eitha);

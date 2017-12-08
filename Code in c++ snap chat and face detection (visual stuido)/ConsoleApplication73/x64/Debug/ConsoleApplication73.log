@@ -1,10 +1,10 @@
 ﻿  Source.cpp
-c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(334): warning C4101: 'maxVal': unreferenced local variable
-c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(333): warning C4101: 'minVal': unreferenced local variable
-c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(629): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(630): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(1122): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(1212): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(1213): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(335): warning C4101: 'maxVal': unreferenced local variable
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(334): warning C4101: 'minVal': unreferenced local variable
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(637): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(638): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(1131): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(1221): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(1222): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
   ConsoleApplication73.vcxproj -> C:\Users\extra\documents\visual studio 2015\Projects\ConsoleApplication73\x64\Debug\ConsoleApplication73.exe
   ConsoleApplication73.vcxproj -> C:\Users\extra\documents\visual studio 2015\Projects\ConsoleApplication73\x64\Debug\ConsoleApplication73.pdb (Full PDB)
