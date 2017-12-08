@@ -164,9 +164,11 @@
     <Image Include="FB_IMG_1455471797813.jpg" />
     <Image Include="FB_IMG_1463846848502.jpg" />
     <Image Include="flower_crown.png" />
+    <Image Include="hhhhhhhh#.png" />
     <Image Include="mariam1.jpg" />
     <Image Include="moustache.png" />
     <Image Include="mustache1.png" />
+    <Image Include="ssss.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

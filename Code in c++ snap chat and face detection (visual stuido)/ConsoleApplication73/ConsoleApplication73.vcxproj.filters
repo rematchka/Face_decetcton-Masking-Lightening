@@ -65,5 +65,11 @@
     <Image Include="dog_right_ear.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="hhhhhhhh#.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="ssss.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

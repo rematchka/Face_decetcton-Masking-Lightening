@@ -6,6 +6,9 @@
 #include<iostream>
 #include<algorithm>
 #include "opencv2/opencv.hpp"
+#include <vector>
+
+
 
 using namespace cv;
 using namespace std;
@@ -20,7 +23,554 @@ CascadeClassifier face_cascade;
 CascadeClassifier eyes_cascade;
 CascadeClassifier nose_cascade;
 
+int isodata(Mat I)
+{
+	//I.convertTo(I, CV_8UC1);
+	int histSize = 256;    // bin size
+	float range[] = { 0, 255 };
+	const float *ranges[] = { range };
 
+	// Calculate histogram
+	MatND hist;
+	calcHist(&I, 1, 0, Mat(), hist, 1, &histSize, ranges, true, false);
+
+	// Show the calculated histogram in command window
+	
+
+	return 0;
+
+}
+int otsuThreshold(Mat img)
+{
+	int rows = img.rows;
+	int cols = img.cols;
+	vector<int> ihist(256);
+	vector<float> hist_val(256);
+	float prbn;
+	float meanitr;
+	float meanglb;
+	int OPT_THRESH_VAL;
+	float param1;
+	float param2;
+	double param3;
+	int pos;
+	prbn = 0.0;
+	meanitr = 0.0;
+	meanglb = 0.0;
+	OPT_THRESH_VAL = 0;
+
+	param3 = 0.0;
+	for (int i = 0; i < rows; i++)
+	{
+		for (int j = 0; j < cols; j++)
+		{
+			pos = img.at<uchar>(i, j);  // Check the pixel value
+			ihist[pos] += 1; // Use the pixel value as the position/"Weight"
+		}
+	}
+
+
+	//Normalise histogram values and calculate global mean level
+	for (int i = 0; i < 256; ++i)
+	{
+		hist_val[i] = ihist[i] / (float)(rows * cols);
+		meanglb += ((float)i * hist_val[i]);
+	}
+	
+
+	// Implementation of OTSU algorithm
+	for (int i = 0; i < 255; i++)
+	{
+		prbn += (float)hist_val[i];
+		meanitr += ((float)i * hist_val[i]);
+
+		param1 = (float)((meanglb * prbn) - meanitr);
+		param2 = (float)(param1 * param1) / (float)(prbn * (1.0f - prbn));
+
+		if (param2 > param3)
+		{
+			param3 = param2;
+			OPT_THRESH_VAL = i;     // Update the "Weight/Value" as Optimum Threshold value
+		}
+	}
+	return OPT_THRESH_VAL;
+
+
+}
+/*int isodata(Mat I)
+{
+	//I.convertTo(I, CV_8UC1);
+	int histSize = 256;    // bin size
+	float range[] = { 0, 255 };
+	const float *ranges[] = { range };
+
+	// Calculate histogram
+	MatND hist;
+	calcHist(&I, 1, 0, Mat(), hist, 1, &histSize, ranges, true, false);
+
+	// Show the calculated histogram in command window
+
+
+	return 0;
+
+}*/
+
+void eye_map(Mat& face_image)
+{
+	try {
+		Mat ttt = face_image;
+		ttt.convertTo(ttt, CV_32FC3);
+		vector<Mat> channells1;
+		split(ttt, channells1);
+		Mat I0 = channells1[0];
+		Mat I1 = channells1[1];
+		Mat I2 = channells1[2];
+		cout << I0.channels() << endl;
+		Mat iycbcr;
+		cvtColor(face_image, iycbcr, CV_BGR2YCrCb);
+		vector<Mat> channels1;
+		split(iycbcr, channels1);
+		
+		Mat y = channels1[0];
+		Mat cr = channels1[1];
+		Mat cb = channels1[2];
+		cout << " y value 0 " << y.at<uchar>(0, 0) << endl;
+		y = 0.299  *I2 + 0.587 *I1 + 0.114 *I0+16;
+		//cout << " y value 0 " << y.at<float>(0, 0) << endl;
+		//y.convertTo(y, CV_32FC1);
+		cr.convertTo(cr, CV_32FC1);
+		cb.convertTo(cb, CV_32FC1);
+		//cout<<" y value "<< y.at<float>(0, 0) << endl;
+		
+		Mat Q;
+		pow(cb, 2, Q);
+		Mat R = 255 - cr;
+		pow(R, 2, R);
+		Mat G = cv::Mat(cb / cr);
+		Mat CrCb = cv::Mat(cr / cb);
+		Mat	EyeC = (Q + R + G) / 3;
+		Mat CRS; pow(cr, 2, CRS);
+		Scalar	ssCRS = sum(sum(CRS));
+		Scalar ssCrCb = sum(sum(CrCb));
+		double eta = 0.95 * ssCRS[0] / ssCrCb[0];
+		Mat x = CRS - eta * CrCb;
+		Mat xx = CRS.mul(x);
+		Mat MM = xx.mul(x);
+		Mat mat = Mat::ones(9, 9, CV_8U);
+
+		mat.at<uchar>(0, 0) = 0;
+		mat.at<uchar>(0, 1) = 0;
+		
+		mat.at<uchar>(0, 7) = 0;
+		mat.at<uchar>(0, 8) = 0;
+		mat.at<uchar>(1, 0) = 0;
+		mat.at<uchar>(1, 8) = 0;
+		mat.at<uchar>(8, 0) = 0;
+		mat.at<uchar>(8, 1) = 0;
+		mat.at<uchar>(7, 0) = 0;
+		mat.at<uchar>(7, 8) = 0;
+		mat.at<uchar>(8, 7) = 0;
+		mat.at<uchar>(8, 8) = 0;
+		cout << mat << endl;
+		//cv::Mat se = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2 * 4 - 1, 2 * 4 - 1));
+		Mat dil1 = cv::Mat::zeros(y.size(), CV_32FC1);
+		cv::dilate(y, dil1, mat);
+		Mat erodee1 = cv::Mat::zeros(y.size(), CV_32FC1);
+		cv::erode(y, erodee1, mat);
+		Mat EyeY = cv::Mat(dil1 / (erodee1+1));
+		Mat EyeMap = EyeY.mul(EyeC);
+		//Initialize m
+		double minVal;
+		double maxVal;
+		Point minLoc;
+		Point maxLoc;
+
+		minMaxLoc(EyeC, &minVal, &maxVal, &minLoc, &maxLoc);
+		EyeC = EyeC / maxVal;
+		minMaxLoc(EyeMap, &minVal, &maxVal, &minLoc, &maxLoc);
+		EyeMap = EyeMap / maxVal;
+		minMaxLoc(EyeY, &minVal, &maxVal, &minLoc, &maxLoc);
+		EyeY = EyeY / maxVal;
+
+		minMaxLoc(dil1, &minVal, &maxVal, &minLoc, &maxLoc);
+		dil1 = dil1 / maxVal;
+
+		minMaxLoc(erodee1, &minVal, &maxVal, &minLoc, &maxLoc);
+		erodee1 = erodee1 / maxVal;
+		imshow("Eye map ", EyeMap);
+
+		waitKey(0);
+
+		imshow(" Eye c", EyeC);
+		waitKey(0);
+
+		imshow(" Eye y", EyeY);
+		waitKey(0);
+		imshow(" erode", erodee1);
+		waitKey(0);
+		imshow(" dil", dil1);
+		waitKey(0);
+
+		Mat normalizedImage;
+		normalize(EyeMap, normalizedImage, 1.0, 0.0, NORM_MINMAX,  CV_64F);
+		//EyeMap.convertTo(normalizedImage, CV_64FC3, 1.0 / 255.0);
+		Mat img_bw;
+		imshow(" threshold image", normalizedImage);
+		waitKey(0);
+		EyeMap.convertTo(EyeMap,CV_8U );
+		cout << normalizedImage.channels() << endl;
+		cv::threshold(EyeMap, img_bw, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+
+		imshow(" threshold image", img_bw);
+		waitKey(0);
+
+	}
+	catch (cv::Exception & e) {
+		cerr << e.msg << endl; // output exception message
+	}
+
+}
+cv::Mat mat2gray(cv::Mat inMat)
+{
+	//idea: to be scaled between 0 and 1, compute for each value: val := (val - minVal)/(maxVal-minVal)
+
+	if (inMat.channels() != 1) std::cout << "mat2gray only works for single channel floating point matrices" << std::endl;
+
+	// here we assume floating point matrices (single/double precision both ok)
+	double minVal, maxVal;
+
+	cv::minMaxLoc(inMat, &minVal, &maxVal);
+
+	cv::Mat scaledMat = inMat.clone();
+	scaledMat = scaledMat - cv::Mat(inMat.size(), inMat.type(), cv::Scalar(minVal));
+	scaledMat = ((1.0) / (maxVal - minVal))*scaledMat;
+
+	return scaledMat;
+}
+void another_eye_map(Mat I)
+{
+	try {
+		Mat ttt = I;
+
+		ttt.convertTo(ttt, CV_32FC3);
+		Mat iycbcr;
+		cvtColor(ttt, iycbcr, CV_BGR2YCrCb);
+		vector<Mat> channels1;
+		split(iycbcr, channels1);
+		Mat y = channels1[0];
+		Mat cr = channels1[1];
+		Mat cb = channels1[2];
+	
+		y = 255 * mat2gray(y);
+		cr = 255 * mat2gray(cr);
+		cb = 255 * mat2gray(cb);
+		y.convertTo(y, CV_8U);
+		cr.convertTo(cr, CV_8U);
+		cb.convertTo(cb, CV_8U);
+		cv::Mat fullImageHSV ;
+
+
+		cvtColor(I, fullImageHSV, CV_BGR2HSV);
+
+		vector<Mat> channels;
+		split(fullImageHSV, channels);
+		Mat hue = channels[0];
+		Mat s = channels[1];
+
+		//	normalize(cb, cb, 1.0, 0.0, NORM_MINMAX, CV_32F);
+		//normalize(cr, cr, 1.0, 0.0, NORM_MINMAX, CV_32F);
+		//cr.convertTo(cr, CV_32F, 255.0);
+		//cb.convertTo(cb, CV_32F, 255.0);
+		//cb.convertTo(cb, CV_32F, 1.0 / 255.0);
+		//cr.convertTo(cr, CV_32F, 1.0 / 255.0);
+	
+		//Mat R;
+		//pow((cr), 2.0, R);
+		//s.convertTo(s, CV_32FC1);
+		Mat powcr;
+		pow(cr, 2, powcr);
+
+		//cout << R.size() << endl;
+		//cout << powcr << endl;
+		int rows = powcr.rows;
+		int cols = powcr.cols;
+		Mat result = cb;
+		int maxi = max(rows, cols);
+		int mini = min(rows, cols);
+	
+		//invert(cb, inverted, cv::DECOMP_SVD);
+		//resize(cr, cr, cvSize(maxi, maxi));
+		//resize(cb, cb, cvSize(maxi, maxi));
+		//cb = abs(cb);
+		//cout << inverted << endl;
+		//	
+		//Mat xx = cb.reshape(1, maxi);
+		//xx.convertTo(xx, CV_32F);
+		//Mat invcb = xx.inv(DECOMP_LU);
+		//cv::solve(cr, cb, result, DECOMP_LU);
+
+
+
+		Scalar  ss = sum(sum(powcr));
+		double ee = ss[0];
+
+		Mat CrCb = cv::Mat(cr / cb);
+		Scalar dCrCb = sum(sum(CrCb));
+		cout << dCrCb[0] << endl;
+
+		double eitha = 0.95*(ss[0] / dCrCb[0]);
+
+		cout << eitha << endl;
+
+
+
+		Mat powcrcb;
+
+		Mat xxx = powcr - (eitha*CrCb);
+		pow(xxx, 2, xxx);
+		Mat	Mouthmap = powcr.mul(xxx);
+		Mat	EnLip = s.mul(Mouthmap);
+		double minVal;
+		double maxVal;
+		Point minLoc;
+		Point maxLoc;
+
+/*		minMaxLoc(Mouthmap, &minVal, &maxVal, &minLoc, &maxLoc);
+		Mouthmap = Mouthmap / maxVal;
+
+
+		minMaxLoc(EnLip, &minVal, &maxVal, &minLoc, &maxLoc);
+		EnLip = EnLip / maxVal;*/
+
+		imshow("mouth map", Mouthmap);
+		waitKey();
+		imshow("EnLip", EnLip);
+		waitKey();
+		Mat dst;
+		int morph_operator = 0;
+		int operation = morph_operator + 5;
+		cv::Mat se = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2 * 25 - 1, 2 * 25 - 1));
+		Mat mat = Mat::ones(9, 9, CV_8U);
+
+		mat.at<uchar>(0, 0) = 0;
+		mat.at<uchar>(0, 1) = 0;
+
+		mat.at<uchar>(0, 7) = 0;
+		mat.at<uchar>(0, 8) = 0;
+		mat.at<uchar>(1, 0) = 0;
+		mat.at<uchar>(1, 8) = 0;
+		mat.at<uchar>(8, 0) = 0;
+		mat.at<uchar>(8, 1) = 0;
+		mat.at<uchar>(7, 0) = 0;
+		mat.at<uchar>(7, 8) = 0;
+		mat.at<uchar>(8, 7) = 0;
+		mat.at<uchar>(8, 8) = 0;
+		/// Apply the specified morphology operation
+		morphologyEx(Mouthmap, dst, operation, mat);
+		Mat img_bw;
+		imshow(" morphing image", dst);
+		waitKey(0);
+		
+		Mat x = Mouthmap;
+		/*
+		imshow("  image", dst);
+		waitKey(0);*/
+		/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		dst.convertTo(dst, CV_8U);
+		x.convertTo(x, CV_8U);
+		int thresh = otsuThreshold(dst);
+		cv::threshold(dst, img_bw, thresh, 255, CV_THRESH_BINARY);
+
+		imshow(" otsu image", img_bw);
+		waitKey(0);
+		cv::threshold(x, img_bw, 0, 255, CV_THRESH_BINARY | THRESH_OTSU);
+
+		imshow(" threshold image", img_bw);
+		waitKey(0);
+
+		cv::threshold(dst, img_bw, 0, 255, CV_THRESH_BINARY | THRESH_OTSU);
+
+		imshow(" ther image", img_bw);
+		waitKey(0);
+	}
+	catch (cv::Exception & e) {
+		cerr << e.msg << endl; // output exception message
+	}
+
+}
+
+void mouth_map(Mat I)
+{
+	try {
+		//Mat img = imread("ssss.png");
+		Mat ttt = I;
+
+		ttt.convertTo(ttt, CV_32FC3);
+		vector<Mat> channells1;
+		cv::Mat iycbcr = cv::Mat::zeros(I.size(), CV_32FC3);
+		/*split(ttt, channells1);
+		Mat I0 = channells1[0];
+		Mat I1 = channells1[1];
+		Mat I2 = channells1[2];
+		I0.convertTo(I0, CV_32FC1);
+		I1.convertTo(I1, CV_32FC1);
+		I2.convertTo(I2, CV_32FC1);
+		I0 = I0 / 255.0;
+		I1 = I1 / 255.0;
+		I2 = I2 / 255.0;*/
+		//Mat iycbcr;
+		cvtColor(ttt, iycbcr, CV_BGR2YCrCb);
+		vector<Mat> channels1;
+		split(iycbcr, channels1);
+		Mat y = channels1[0];
+		Mat cr = channels1[1];
+		Mat cb = channels1[2];
+		//cout << " y value 0 " << y.at<uchar>(0, 0) << endl;
+
+		//cout << " y value 0 " << y.at<float>(0, 0) << endl;
+		//y.convertTo(y, CV_32FC1);
+		//cr.convertTo(cr, CV_32FC1);
+		//cb.convertTo(cb, CV_32FC1);
+		//y = 0.299  *I2 + 0.587 *I1 + 0.114 *I0 + 16;
+		//cb = 0.148* I2 - 0.291*  I1 + 0.439 * I0 +128;
+		//cr = 0.439 *I2 - 0.368 * I1 - 0.071 * I0 +128;
+		//cout << " y value 0 " << y.at<uchar>(0, 0) << endl;
+
+		//cout << " y value 0 " << y.at<float>(0, 0) << endl;
+		cv::Mat fullImageHSV = cv::Mat::zeros(I.size(), CV_32FC3);
+
+
+		cvtColor(I, fullImageHSV, CV_BGR2HSV);
+
+		vector<Mat> channels;
+		split(fullImageHSV, channels);
+		Mat hue = channels[0];
+		Mat s = channels[1];
+
+		//	normalize(cb, cb, 1.0, 0.0, NORM_MINMAX, CV_32F);
+			//normalize(cr, cr, 1.0, 0.0, NORM_MINMAX, CV_32F);
+			//cr.convertTo(cr, CV_32F, 255.0);
+			//cb.convertTo(cb, CV_32F, 255.0);
+			//cb.convertTo(cb, CV_32F, 1.0 / 255.0);
+			//cr.convertTo(cr, CV_32F, 1.0 / 255.0);
+		cout << cb.at<float>(0, 0) << endl;
+		cout << cr.at<float>(0, 0) << endl;
+		//Mat R;
+		//pow((cr), 2.0, R);
+		s.convertTo(s, CV_32FC1);
+		Mat powcr;
+		pow(cr, 2, powcr);
+		
+		//cout << R.size() << endl;
+		//cout << powcr << endl;
+		int rows = powcr.rows;
+		int cols = powcr.cols;
+		Mat result=cb;
+		int maxi = max(rows, cols);
+		int mini= min(rows, cols);
+		//cv::Mat inverted(cols, rows, CV_32FC1);
+		//invert(cb, inverted, cv::DECOMP_SVD);
+		//resize(cr, cr, cvSize(maxi, maxi));
+		//resize(cb, cb, cvSize(maxi, maxi));
+		//cb = abs(cb);
+		//cout << inverted << endl;
+	//	
+		//Mat xx = cb.reshape(1, maxi);
+		//xx.convertTo(xx, CV_32F);
+		//Mat invcb = xx.inv(DECOMP_LU);
+		//cv::solve(cr, cb, result, DECOMP_LU);
+		
+		
+
+		Scalar  ss = sum(sum(powcr));
+		double ee = ss[0];
+		
+		Mat CrCb = cv::Mat(cr / cb);
+		Scalar dCrCb = sum(sum(CrCb));
+		cout << dCrCb[0] << endl;
+		
+		double eitha = 0.95*(ss[0] / dCrCb[0]);
+
+		cout << eitha << endl;
+
+
+
+		Mat powcrcb;
+		
+		Mat xxx = powcr - (eitha*CrCb);
+		pow(xxx, 2, xxx);
+		Mat	Mouthmap = powcr.mul(xxx);
+		Mat	EnLip = s.mul(Mouthmap);
+		double minVal;
+		double maxVal;
+		Point minLoc;
+		Point maxLoc;
+
+		minMaxLoc(Mouthmap, &minVal, &maxVal, &minLoc, &maxLoc);
+		Mouthmap = Mouthmap / maxVal;
+
+
+		minMaxLoc(EnLip, &minVal, &maxVal, &minLoc, &maxLoc);
+		EnLip = EnLip / maxVal;
+
+		imshow("mouth map", Mouthmap);
+		waitKey();
+		imshow("EnLip", EnLip);
+		waitKey();
+		Mat dst;
+		int morph_operator = 0;
+		int operation = morph_operator + 5;
+		//cv::Mat se = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2 * 25- 1, 2 * 25 - 1));
+		Mat mat = Mat::ones(9, 9, CV_8U);
+
+		mat.at<uchar>(0, 0) = 0;
+		mat.at<uchar>(0, 1) = 0;
+
+		mat.at<uchar>(0, 7) = 0;
+		mat.at<uchar>(0, 8) = 0;
+		mat.at<uchar>(1, 0) = 0;
+		mat.at<uchar>(1, 8) = 0;
+		mat.at<uchar>(8, 0) = 0;
+		mat.at<uchar>(8, 1) = 0;
+		mat.at<uchar>(7, 0) = 0;
+		mat.at<uchar>(7, 8) = 0;
+		mat.at<uchar>(8, 7) = 0;
+		mat.at<uchar>(8, 8) = 0;
+		/// Apply the specified morphology operation
+		morphologyEx(EnLip, dst, operation, mat);
+		Mat img_bw;
+		imshow(" morphing image", dst);
+		waitKey(0);
+		cout << dst.at<float>(0, 0);
+		Mat x = Mouthmap;
+	/*
+	imshow("  image", dst);
+	waitKey(0);*/
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
+		
+		dst.convertTo(dst, CV_8U);
+		x.convertTo(x, CV_8U);
+		int thresh = otsuThreshold(dst);
+		cv::threshold(dst, img_bw, thresh, 255, CV_THRESH_BINARY );
+
+		imshow(" otsu image", img_bw);
+		waitKey(0);
+		cv::threshold(x, img_bw, 0, 255, CV_THRESH_BINARY);
+
+		imshow(" threshold image", img_bw);
+		waitKey(0);
+
+		cv::threshold(dst, img_bw, thresh, 255, CV_THRESH_BINARY );
+
+		imshow(" ther image", img_bw);
+		waitKey(0);
+	}
+	catch (cv::Exception & e) {
+		cerr << e.msg << endl; // output exception message
+	}
+
+}
 void face_detection_manually()
 {
 	cv::Mat I = imread("FB_IMG_1463846848502.jpg", CV_LOAD_IMAGE_COLOR);
@@ -39,7 +589,8 @@ void face_detection_manually()
 	Mat I0 = channels1[0];
 	Mat I1 = channels1[1];
 	Mat I2 = channels1[2];
-
+	//imshow("Display window", I);
+	//waitKey(0);
 	cv::Mat fullImageHSV = cv::Mat::zeros(I.size(), CV_32FC3);
 	try
 	{
@@ -142,11 +693,13 @@ void face_detection_manually()
 		mat.at<uchar>(8, 1) = 0;
 		mat.at<uchar>(8, 7) = 0;
 		mat.at<uchar>(8, 8) = 0;
+
+		cv::Mat sel = cv::getStructuringElement(MORPH_ELLIPSE, cv::Size(15, 15));
 		Mat dil = cv::Mat::zeros(hue.size(), CV_32FC1);
 
-		cv::dilate(segment, dil, mat);
+		cv::dilate(segment, dil, sel);
 		Mat erodee = cv::Mat::zeros(hue.size(), CV_32FC1);
-		cv::erode(dil, erodee, mat);
+		cv::erode(dil, erodee, sel);
 
 
 		vector<Mat> channelsmerge1;
@@ -176,9 +729,44 @@ void face_detection_manually()
 		waitKey(0);
 
 
-		segment.convertTo(segment, CV_8S);
+		//segment.convertTo(segment, CV_8S);
+		
+		erodee.convertTo(erodee, CV_8U);
+		cout << erodee.channels() << endl;
+		
+		//CV_Assert(r.type() == CV_8UC1);
+		Mat dst;
+		vector<vector<cv::Point>> contours;
+		vector<Vec4i> hierarchy;
+
+		findContours(erodee, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+		CvScalar color = cvScalar(255);
+		dst = Mat::zeros(erodee.size(), CV_8UC1);
+
+		for (int i = 0; i<contours.size(); i++)
+		{
+			drawContours(dst, contours, i, color, -1, 8, hierarchy, 0, cv::Point());
+		}
+		namedWindow("Contours", CV_WINDOW_AUTOSIZE);
+		medianBlur(dst, dst, (5, 5));
+		
+		Mat dil1 = cv::Mat::zeros(hue.size(), CV_32FC1);
+
+		cv::dilate(dst, dil1, sel);
+		Mat erodee1 = cv::Mat::zeros(hue.size(), CV_32FC1);
+		cv::erode(dil1, erodee1, sel);
+
+		imshow("Contours", dst);
+		
+		waitKey();
+
+		imshow("erode 22", erodee1);
+
+		waitKey();
+
+		//erodee1.convertTo(erodee1, CV_8S);
 		Mat stats, centroids, labelImage;
-		int nLabels = connectedComponentsWithStats(segment, labelImage, stats, centroids, 8, CV_32S);
+		int nLabels = connectedComponentsWithStats(erodee1, labelImage, stats, centroids, 8, CV_32S);
 		Mat mask(labelImage.size(), CV_8UC1, Scalar(0));
 		int maxi = 0;
 		for (int label = 1; label < nLabels; ++label) { //label  0 is the background
@@ -188,7 +776,7 @@ void face_detection_manually()
 			//colors[label] = Vec3b((rand() & 255), (rand() & 255), (rand() & 255));
 			maxi = max(maxi, stats.at<int>(label, CC_STAT_AREA));
 		}
-		Mat surfSup = stats.col(4) >= maxi;
+		Mat surfSup = stats.col(4) >= 30000;
 
 
 		for (int i = 1; i < nLabels; i++)
@@ -198,10 +786,43 @@ void face_detection_manually()
 				mask = mask | (labelImage == i);
 			}
 		}
-		Mat r(segment.size(), CV_8UC1, Scalar(0));
-		outerode.copyTo(r, mask);
+		Mat r(erodee1.size(), CV_8UC1, Scalar(0));
+		erodee1.copyTo(r, mask);
+	
+	
 		imshow("Result", r);
 		waitKey();
+		vector<Mat> channels11;
+		split(r, channels11);
+		Mat ro = channels11[0];
+		
+		//to do and face with contour
+		/*ro.convertTo(ro, CV_32F);
+		I0 = I0*ro;
+		I1 = I1*ro;
+		I2 = I2*ro;*/
+		I0.convertTo(I0, CV_8U);
+		I1.convertTo(I1, CV_8U);
+		I2.convertTo(I2, CV_8U);
+		bitwise_and(I0, ro,I0);
+		bitwise_and(I1, ro, I1);
+		bitwise_and(I2, ro, I2);
+		vector<Mat> channelorigi;
+		channelorigi.push_back(I0);
+		channelorigi.push_back(I1);
+		channelorigi.push_back(I2);
+		Mat out;
+		merge(channelorigi, out);
+		imshow("extract face", out);
+
+
+
+
+		waitKey(0);
+
+		//eye_map(out);
+		mouth_map(out);
+		//another_eye_map(out);
 
 
 	}
@@ -210,6 +831,8 @@ void face_detection_manually()
 		cerr << e.msg << endl; // output exception message
 	}
 }
+
+
 static void detectEyes(Mat& img, vector<Rect_<int> >& eyes)
 {
 	//CascadeClassifier eyes_cascade;
@@ -278,7 +901,7 @@ void face_detection_harr_cascade_mustache()
 		int origimostwidth = mustache.size().width;
 
 
-		cv::Mat frame = imread("FB_IMG_1463846848502.jpg", CV_LOAD_IMAGE_COLOR);
+		cv::Mat frame = imread("hhhhhhhh#.png", CV_LOAD_IMAGE_COLOR);
 		if (frame.empty())
 		{
 			std::cout << "!!! Failed imread(): image not found" << std::endl;
@@ -318,7 +941,7 @@ void face_detection_harr_cascade_mustache()
 			if (!nose_cascade.empty())
 			{
 				vector<Rect_<int> > nose;
-				detectNose(frame, nose);
+				detectNose(faceROI, nose);
 
 				// Mark points corresponding to the centre (tip) of the nose
 				for (unsigned int j = 0; j < nose.size(); ++j)
@@ -332,7 +955,7 @@ void face_detection_harr_cascade_mustache()
 
 					int mostw = 3 * n.width;
 					int mosth = mostw * origimostheight / origimostwidth;
-					int x1 = n.x - (mostw / 4), x2 = n.x + n.width + (mostw / 4), y1 = n.y + n.height - (mosth / 2), y2 = n.y + n.height + (mosth / 2);
+					int x1 = n.x - (mostw / 4) + faces[i].x, x2 = n.x + n.width + (mostw / 4)+faces[i].x, y1 = n.y + n.height - (mosth / 2)+faces[i].y, y2 = n.y + n.height + (mosth / 2) + faces[i].y;
 				/*	if (x1 < 0)
 						x1 = 0;
 					if (y1 < 0)
@@ -403,7 +1026,7 @@ void face_detection_crown()
 		Mat flower = imread("flower_crown.png");
 		
 
-		cv::Mat frame = imread("FB_IMG_1463846848502.jpg", CV_LOAD_IMAGE_COLOR);
+		cv::Mat frame = imread("hhhhhhhh#.png", CV_LOAD_IMAGE_COLOR);
 		if (frame.empty())
 		{
 			std::cout << "!!! Failed imread(): image not found" << std::endl;
@@ -439,7 +1062,7 @@ void face_detection_crown()
 						
 						if (flower.at<Vec3b>(k, l)[m]>0)
 						{
-							frame.at<Vec3b>(faces[i].y + k - int(0.5*faces[i].height), l + faces[i].x)[m] = flower.at<Vec3b>(k, l)[m];
+							frame.at<Vec3b>(abs(faces[i].y + k - int(0.5*faces[i].height)), l + faces[i].x)[m] = flower.at<Vec3b>(k, l)[m];
 							
 							
 
@@ -471,7 +1094,7 @@ void face_detect_hat_mustache()
 		Mat hat = imread("cowboy_hat.png");
 
 
-		cv::Mat frame = imread("FB_IMG_1463846848502.jpg", CV_LOAD_IMAGE_COLOR);
+		cv::Mat frame = imread("hhhhhhhh#.png", CV_LOAD_IMAGE_COLOR);
 		if (frame.empty())
 		{
 			std::cout << "!!! Failed imread(): image not found" << std::endl;
@@ -496,7 +1119,7 @@ void face_detect_hat_mustache()
 			namedWindow("Display window1", CV_WINDOW_AUTOSIZE);
 			imshow(" face detection", frame);
 			waitKey(0);
-			resize(hat, hat, cvSize((faces[i].width+1), (faces[i].height*0.35)+1));
+			resize(hat, hat, cvSize((faces[i].width+1), (faces[i].height*0.5)+1));
 			//flower.copyTo(frame(cv::Rect(faces[i].x, -faces[i].y+faces[i].height, faces[i].width, faces[i].height)));
 			int rows = hat.rows;
 			int cols = hat.cols;
@@ -507,7 +1130,7 @@ void face_detect_hat_mustache()
 
 						if (hat.at<Vec3b>(k, l)[m]<235)
 						{
-							frame.at<Vec3b>(faces[i].y + k - int(0.25*faces[i].height), l + faces[i].x)[m] = hat.at<Vec3b>(k, l)[m];
+							frame.at<Vec3b>(abs(faces[i].y + k - int(0.25*faces[i].height)), l + faces[i].x)[m] = hat.at<Vec3b>(k, l)[m];
 
 
 
@@ -518,7 +1141,7 @@ void face_detect_hat_mustache()
 
 			Mat mst= imread("moustache.png");
 			int mst_width = int(faces[i].width*0.4166666) + 1;
-			int	mst_height = int(faces[i].height*0.142857) + 1;
+			int	mst_height = int(faces[i].height*0.14285) + 1;
 
 
 
@@ -529,7 +1152,7 @@ void face_detect_hat_mustache()
 					for (int k = 0; k < 3; k++)
 					{
 						if (mst.at<Vec3b>(ii - int(0.62857142857*faces[i].height), j - int(0.29166666666*faces[i].width))[k] < 235)
-							frame.at < Vec3b>(faces[i].y + i, faces[i].x + j)[k] =mst.at<Vec3b>(ii - int(0.62857142857*faces[i].height), j - int(0.29166666666*faces[i].width))[k];
+							frame.at < Vec3b>(faces[i].y + ii, faces[i].x + j)[k] =mst.at<Vec3b>(ii - int(0.62857142857*faces[i].height), j - int(0.29166666666*faces[i].width))[k];
 						
 					}
 
@@ -560,7 +1183,7 @@ void face_detect_dog_filter()
 		Mat dog_right_ear = imread("dog_right_ear.png");
 
 
-		cv::Mat frame = imread("FB_IMG_1463846848502.jpg", CV_LOAD_IMAGE_COLOR);
+		cv::Mat frame = imread("hhhhhhhh#.png", CV_LOAD_IMAGE_COLOR);
 		if (frame.empty())
 		{
 			std::cout << "!!! Failed imread(): image not found" << std::endl;
@@ -579,6 +1202,7 @@ void face_detect_dog_filter()
 			//Point center(faces[i].x + faces[i].width / 2, faces[i].y + faces[i].height / 2);
 			//ellipse(frame, center, Size(faces[i].width / 2, faces[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4, 8, 0);
 			Mat faceROI = frame_gray(faces[i]);
+			
 			imshow("mmm", faceROI);
 			waitKey();
 			Mat face_color = frame(faces[i]);
@@ -625,7 +1249,7 @@ void face_detect_dog_filter()
 
 			
 			vector<Rect_<int> > nose;
-			detectNose(frame, nose);
+			detectNose(faceROI, nose);
 
 			// Mark points corresponding to the centre (tip) of the nose
 			for (unsigned int j = 0; j < nose.size(); ++j)
@@ -646,7 +1270,7 @@ void face_detect_dog_filter()
 
 							if (dog_nose.at<Vec3b>(k, l)[m]>0)
 							{
-								frame.at<Vec3b>(n.y + k , l + n.x)[m] = dog_nose.at<Vec3b>(k, l)[m];
+								frame.at<Vec3b>(n.y + k+faces[i].y, l + n.x+ faces[i].x)[m] = dog_nose.at<Vec3b>(k, l)[m];
 
 
 
@@ -886,8 +1510,8 @@ void face_detection_haar_cascade_mariam()
 			Mat face_without_eliipse;
 			frame(faces[i]).copyTo(face_without_eliipse);
 			//= frame(faces[i]);
-			Point center(faces[i].x + faces[i].width / 2, faces[i].y + faces[i].height / 2);
-			ellipse(frame, center, Size(faces[i].width / 2, faces[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4, 8, 0);
+			Point center(faces[i].x + faces[i].width /2, faces[i].y + faces[i].height/2 );
+			ellipse(frame, center, Size(faces[i].width/2 , faces[i].height/2 ), 0, 0, 360, Scalar(255, 0, 255), 4, 8, 0);
 			//grey image for face
 			Mat faceROI = frame_gray(faces[i]);
 			imshow("mmm", faceROI);
@@ -918,7 +1542,7 @@ int main(int, char** argv)
 	if (!face_cascade.load(face_cascade_name)) { printf("--(!)Error loading face cascade\n"); return -1; };
 	if (!eyes_cascade.load(eyes_cascade_name)) { printf("--(!)Error loading eyes cascade\n"); return -1; };
 	if(!nose_cascade.load(nose_cascde_name)) { printf("--(!)Error loading nose cascade\n"); return -1; };
-	//face_detection_manually();
+	face_detection_manually();
 	//face_detection_harr_cascade_mustache();
 	//face_detection_crown();
 	//face_detect_hat_mustache();
@@ -927,7 +1551,7 @@ int main(int, char** argv)
 	//white_patch();
 	//modified_white_patch(200);
 	//progressive(200, 100);
-	face_detection_haar_cascade_mariam();
+	//face_detection_haar_cascade_mariam();
 
 	
 	 return 0;

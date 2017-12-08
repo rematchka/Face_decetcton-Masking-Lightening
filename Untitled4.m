@@ -3,7 +3,7 @@ file2='download.jpg';
 file3='FB_IMG_1455471797813.jpg';
 file4='20161223_163424.jpg';
 file5='mariam.jpg';
-I=imread(file2);
+I=imread(file1);
 
 ggg=I;
 I=double(I);
@@ -77,9 +77,9 @@ im(:,:,3)=I(:,:,3).*segment;
 figure,title('segment');imshow((segment));
 %se=strel('disk',11);
 %se=strel('ball',5,5);
-%se = strel('diamond',14);
-se=strel('disk',12);
-
+se = strel('diamond',14);
+%se=strel('disk',12);
+disp(se);
 dilate=imdilate(segment,se);
 erode=imerode(dilate,se);
 

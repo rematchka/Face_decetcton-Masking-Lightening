@@ -1,4 +1,4 @@
-I=imread('qqqq.jpg');
+I=imread('ssss.png');
 %I=imread(frame);
 EyeMap = rgb2ycbcr(I);
 temp1=0;
@@ -11,6 +11,11 @@ y = double(EyeMap(:,:,1));
 Cb = double(EyeMap(:,:,2));
 Cr = double(EyeMap(:,:,3));
 Z=Cr;
+fid = fopen('y.txt','wt');
+for ii = 1:size(y,1)
+   fprintf(fid,'%g\t',y(ii,:));
+  fprintf(fid,'\n');
+end
 
 
 Q = Cb.^2;
@@ -27,13 +32,14 @@ CRS = Cr.^2;
 ssCRS = sum(sum(CRS));
 ssCrCb=sum(sum(CrCb));
 eta = 0.95 * ssCRS/ssCrCb;
-x= CRS - eta * Cr./Cb;
+x= CRS - eta * CrCb;
 MM = CRS.*x.*x;
 
 SE=strel('disk',4) ;
+disp(SE);
 UP=imdilate(y,SE);
 Down=imerode(y,SE);
-EyeY= UP./(Down+1);
+EyeY= UP./(Down);
 EyeMap=EyeY.*EyeC;
 colormap(gray);
 
@@ -54,26 +60,36 @@ imwrite (EyeC / max (EyeC(:)), 'out.jpg');
 EyeC=EyeC/ max (EyeC(:));
 figure
 imshow(EyeC);
+
+UP=UP/ max (UP(:));
+figure
+imshow(UP);
 EyeMap=EyeMap/ max (EyeMap(:));
 figure
 imshow(EyeMap);
 normalizedImage = uint8(255*mat2gray(EyeMap));
 figure
 imshow(normalizedImage);title('norm img')
-iiiii=isodata(normalizedImage);
-BW = im2bw(normalizedImage,iiiii);
+%iiiii=isodata(normalizedImage);
+%BW = im2bw(normalizedImage,iiiii);
 
-figure
-imshow(BW);title('isodata thersholding img')
+%figure
+%imshow(BW);title('isodata thersholding img')
 
 %normImage = mat2gray(EyeMap);
 normImage = im2double(EyeMap);
 
-iiiii=isodata2(normImage);
-BW = im2bw(normalizedImage,iiiii);
+%iiiii=isodata2(normImage);
+%BW = im2bw(normalizedImage,iiiii);
 
+%figure
+%imshow(BW);title('isodata thersholding img2')
+
+level = graythresh(normImage);
+BW1 = normImage > level;
 figure
-imshow(BW);title('isodata thersholding img2')
+imshow(BW1);title('isodata thersholding img2')
+
 
 
 
