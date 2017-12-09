@@ -1,10 +1,27 @@
 ﻿  Source.cpp
-c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(335): warning C4101: 'maxVal': unreferenced local variable
-c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(334): warning C4101: 'minVal': unreferenced local variable
-c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(637): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(638): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(1131): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(1221): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(1222): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(446): warning C4101: 'maxVal': unreferenced local variable
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(445): warning C4101: 'minVal': unreferenced local variable
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(838): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(839): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(1111): warning C4101: 'h': unreferenced local variable
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(1111): warning C4101: 'w': unreferenced local variable
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(1453): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(1543): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(1544): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+c:\program files (x86)\microsoft visual studio 14.0\vc\include\utility(172): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+  c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(316): note: see reference to function template instantiation 'std::pair<int,int>::pair<_Tp&,_Tp&,void,0>(_Other1,_Other2) noexcept' being compiled
+          with
+          [
+              _Tp=float,
+              _Other1=float &,
+              _Other2=float &
+          ]
+  c:\users\extra\documents\visual studio 2015\projects\consoleapplication73\consoleapplication73\source.cpp(316): note: see reference to function template instantiation 'std::pair<int,int>::pair<_Tp&,_Tp&,void,0>(_Other1,_Other2) noexcept' being compiled
+          with
+          [
+              _Tp=float,
+              _Other1=float &,
+              _Other2=float &
+          ]
   ConsoleApplication73.vcxproj -> C:\Users\extra\documents\visual studio 2015\Projects\ConsoleApplication73\x64\Debug\ConsoleApplication73.exe
   ConsoleApplication73.vcxproj -> C:\Users\extra\documents\visual studio 2015\Projects\ConsoleApplication73\x64\Debug\ConsoleApplication73.pdb (Full PDB)

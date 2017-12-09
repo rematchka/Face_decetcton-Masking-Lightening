@@ -1,4 +1,4 @@
-I=imread('ssss.png');
+I=imread('FB_IMG_1463846848502.jpg');
 %I=imread(frame);
 EyeMap = rgb2ycbcr(I);
 temp1=0;
@@ -17,7 +17,16 @@ for ii = 1:size(y,1)
    fprintf(fid,'%g\t',y(ii,:));
   fprintf(fid,'\n');
 end
-
+fid = fopen('creye.txt','wt');
+for ii = 1:size(Cr,1)
+   fprintf(fid,'%g\t',Cr(ii,:));
+  fprintf(fid,'\n');
+end
+fid = fopen('cbeye.txt','wt');
+for ii = 1:size(Cb,1)
+   fprintf(fid,'%g\t',Cb(ii,:));
+  fprintf(fid,'\n');
+end
 
 Q = Cb.^2;
 R = (1-Cr).^2;
@@ -38,10 +47,10 @@ MM = CRS.*x.*x;
 g = strel('disk',1, 8);
 SE=strel('disk',4) ;
 disp(SE);
-UP=imdilate(y,g);
-Down=imerode(y,g);
+UP=imdilate(y,SE);
+Down=imerode(y,SE);
 EyeY= UP./(Down+1);
-EyeC = histeq(EyeC);
+%EyeC = histeq(EyeC);
 EyeMap=EyeY.*EyeC;
 colormap(gray);
 

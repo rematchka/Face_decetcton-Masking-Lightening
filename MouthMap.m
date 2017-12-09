@@ -1,4 +1,4 @@
-I=imread('ssss.png');
+I=imread('download (4).jpg');
 hsv=rgb2hsv(I);
 %I=double(I);
 %I=imread(frame);

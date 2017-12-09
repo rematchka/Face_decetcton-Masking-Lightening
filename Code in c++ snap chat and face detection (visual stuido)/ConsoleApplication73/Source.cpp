@@ -97,27 +97,29 @@ int otsuThreshold(Mat img)
 
 
 }
-/*int isodata(Mat I)
+
+cv::Mat mat2gray(cv::Mat inMat)
 {
-	//I.convertTo(I, CV_8UC1);
-	int histSize = 256;    // bin size
-	float range[] = { 0, 255 };
-	const float *ranges[] = { range };
+	//idea: to be scaled between 0 and 1, compute for each value: val := (val - minVal)/(maxVal-minVal)
 
-	// Calculate histogram
-	MatND hist;
-	calcHist(&I, 1, 0, Mat(), hist, 1, &histSize, ranges, true, false);
+	if (inMat.channels() != 1) std::cout << "mat2gray only works for single channel floating point matrices" << std::endl;
 
-	// Show the calculated histogram in command window
+	// here we assume floating point matrices (single/double precision both ok)
+	double minVal, maxVal;
 
+	cv::minMaxLoc(inMat, &minVal, &maxVal);
 
-	return 0;
+	cv::Mat scaledMat = inMat.clone();
+	scaledMat = scaledMat - cv::Mat(inMat.size(), inMat.type(), cv::Scalar(minVal));
+	scaledMat = ((1.0) / (maxVal - minVal))*scaledMat;
 
-}*/
-
-void eye_map(Mat& face_image)
+	return scaledMat;
+}
+void eye_map(Mat  face_image)
 {
+	face_image = imread("download (4).jpg");
 	try {
+
 		Mat ttt = face_image;
 		ttt.convertTo(ttt, CV_32FC3);
 		vector<Mat> channells1;
@@ -128,28 +130,29 @@ void eye_map(Mat& face_image)
 		cout << I0.channels() << endl;
 		Mat iycbcr;
 		cvtColor(face_image, iycbcr, CV_BGR2YCrCb);
+		
+		iycbcr.convertTo(iycbcr, CV_32FC3, 1.0 / 255.0);
 		vector<Mat> channels1;
 		split(iycbcr, channels1);
 		
 		Mat y = channels1[0];
 		Mat cr = channels1[1];
 		Mat cb = channels1[2];
-		cout << " y value 0 " << y.at<uchar>(0, 0) << endl;
-		y = 0.299  *I2 + 0.587 *I1 + 0.114 *I0+16;
-		//cout << " y value 0 " << y.at<float>(0, 0) << endl;
-		//y.convertTo(y, CV_32FC1);
-		cr.convertTo(cr, CV_32FC1);
-		cb.convertTo(cb, CV_32FC1);
-		//cout<<" y value "<< y.at<float>(0, 0) << endl;
+	
+		
+		cout << " y value 0 " << y.at<float>(0, 0) << endl;
+		cout << " y value 0 " << cr.at<float>(0, 0) << endl;
+		cout << " y value 0 " << cb.at<float>(0, 0) << endl;
+	
 		
 		Mat Q;
 		pow(cb, 2, Q);
-		Mat R = 255 - cr;
+		Mat R = 1 - cr;
 		pow(R, 2, R);
 		Mat G = cv::Mat(cb / cr);
 		Mat CrCb = cv::Mat(cr / cb);
 		Mat	EyeC = (Q + R + G) / 3;
-	//	equalizeHist(EyeC, EyeC);
+	
 		Mat CRS; pow(cr, 2, CRS);
 		Scalar	ssCRS = sum(sum(CRS));
 		Scalar ssCrCb = sum(sum(CrCb));
@@ -173,14 +176,16 @@ void eye_map(Mat& face_image)
 		mat.at<uchar>(8, 7) = 0;
 		mat.at<uchar>(8, 8) = 0;
 		cout << mat << endl;
-		//cv::Mat se = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2 * 4 - 1, 2 * 4 - 1));
+		
 		Mat dil1 = cv::Mat::zeros(y.size(), CV_32FC1);
 		cv::dilate(y, dil1, mat);
 		Mat erodee1 = cv::Mat::zeros(y.size(), CV_32FC1);
 		cv::erode(y, erodee1, mat);
+
 		Mat EyeY = cv::Mat(dil1 / (erodee1+1));
+		
 		Mat EyeMap = EyeY.mul(EyeC);
-		//Initialize m
+		
 		double minVal;
 		double maxVal;
 		Point minLoc;
@@ -211,43 +216,118 @@ void eye_map(Mat& face_image)
 		waitKey(0);
 		imshow(" dil", dil1);
 		waitKey(0);
-
+		Mat norm = EyeMap;
 		Mat normalizedImage;
+		norm = mat2gray(EyeMap);
+		//norm.convertTo(norm, CV_32FC3, 1.0 / 255.0);
 		normalize(EyeMap, normalizedImage, 1.0, 0.0, NORM_MINMAX,  CV_64F);
 		//EyeMap.convertTo(normalizedImage, CV_64FC3, 1.0 / 255.0);
 		Mat img_bw;
 		imshow(" threshold image", normalizedImage);
 		waitKey(0);
-		EyeMap.convertTo(EyeMap,CV_8U );
+		norm.convertTo(norm,CV_8U );
+		normalizedImage.convertTo(normalizedImage, CV_8U);
 		cout << normalizedImage.channels() << endl;
-		cv::threshold(EyeMap, img_bw, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-
+		cv::threshold(normalizedImage, img_bw, 0, 255, CV_THRESH_BINARY | THRESH_OTSU);
+		
 		imshow(" threshold image", img_bw);
 		waitKey(0);
 
+		cv::threshold(norm, img_bw, 0, 255, CV_THRESH_BINARY | THRESH_OTSU);
+
+		imshow("norm  threshold image", img_bw);
+		waitKey(0);
+
+		
+		Mat stats, centroids, labelImage;
+		int nLabels = connectedComponentsWithStats(img_bw, labelImage, stats, centroids, 8, CV_32S);
+		
+		int maxi = 0;
+		for (int label = 1; label < nLabels; ++label) { //label  0 is the background
+
+
+			cout << "area del component: " << label << "-> " << stats.at<int>(label, CC_STAT_AREA) << endl;
+			
+			maxi = max(maxi, stats.at<int>(label, CC_STAT_AREA));
+		}
+		Mat surfSup = stats.col(4) <200& stats.col(4) >100;
+
+		Mat mask(labelImage.size(), CV_8UC1, Scalar(0));
+		for (int i = 1; i < nLabels; i++)
+		{
+			if (surfSup.at<uchar>(i, 0))
+			{
+				mask = mask | (labelImage == i);
+			}
+		}
+		Mat r(img_bw.size(), CV_8UC1, Scalar(0));
+		img_bw.copyTo(r, mask);
+
+
+		imshow("Result eye", r);
+		waitKey();
+
+		vector<vector<cv::Point>> contours;
+		
+		
+
+		vector<Vec4i> hierarchy;
+
+		Mat drawing = Mat::zeros(r.size(), CV_8UC3);
+		findContours(r, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+		vector<vector<pair<int, int>>> eyes_w_h(contours.size());
+		vector<RotatedRect> minRect(contours.size());
+		vector<RotatedRect> minEllipse(contours.size());
+		for (int i = 0; i < contours.size(); i++)
+		{
+			minRect[i] = minAreaRect(Mat(contours[i]));
+			RotatedRect box = minAreaRect(Mat(contours[i]));
+			eyes_w_h[i].push_back({ box.size.width ,box.size.height });
+			if (contours[i].size() > 5)
+			{
+				minEllipse[i] = fitEllipse(Mat(contours[i]));
+			}
+		}
+		RNG rng(12345);
+		/// Draw contours + rotated rects + ellipses
+		//	Mat drawing = Mat::zeros(threshold_output.size(), CV_8UC3);
+
+		vector<vector<pair<int, int>>> eyes_rect(contours.size());
+		vector<vector<pair<int, int>>> eyes_ellip(contours.size());
+		for (int i = 0; i< contours.size(); i++)
+		{
+			Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
+			// contour
+			drawContours(drawing, contours, i, color, 1, 8, vector<Vec4i>(), 0, Point());
+			// ellipse
+			ellipse(drawing, minEllipse[i], color, 2, 8);
+			//faces_ellip[i].push_back({ minEllipse[i]. ,minEllipse[i].y });
+			// rotated rectangle
+			Point2f rect_points[4]; minRect[i].points(rect_points);
+			for (int j = 0; j < 4; j++)
+			{
+				line(drawing, rect_points[j], rect_points[(j + 1) % 4], color, 1, 8);
+				eyes_rect[i].push_back({ rect_points[j].x ,rect_points[j].y });
+			}
+			for (size_t cP = 0; cP < contours[i].size(); cP++)
+			{
+				Point currentContourPixel = contours[i][cP];
+				eyes_ellip[i].push_back({ currentContourPixel.x ,currentContourPixel.y });
+				// do whatever you want
+			}
+		}
+
+
+		
+		imshow("Contours eye", drawing);
+		waitKey(0);
 	}
 	catch (cv::Exception & e) {
 		cerr << e.msg << endl; // output exception message
 	}
 
 }
-cv::Mat mat2gray(cv::Mat inMat)
-{
-	//idea: to be scaled between 0 and 1, compute for each value: val := (val - minVal)/(maxVal-minVal)
 
-	if (inMat.channels() != 1) std::cout << "mat2gray only works for single channel floating point matrices" << std::endl;
-
-	// here we assume floating point matrices (single/double precision both ok)
-	double minVal, maxVal;
-
-	cv::minMaxLoc(inMat, &minVal, &maxVal);
-
-	cv::Mat scaledMat = inMat.clone();
-	scaledMat = scaledMat - cv::Mat(inMat.size(), inMat.type(), cv::Scalar(minVal));
-	scaledMat = ((1.0) / (maxVal - minVal))*scaledMat;
-
-	return scaledMat;
-}
 void another_eye_map(Mat I)
 {
 	try {
@@ -278,40 +358,17 @@ void another_eye_map(Mat I)
 		Mat hue = channels[0];
 		Mat s = channels[1];
 
-		//	normalize(cb, cb, 1.0, 0.0, NORM_MINMAX, CV_32F);
-		//normalize(cr, cr, 1.0, 0.0, NORM_MINMAX, CV_32F);
-		//cr.convertTo(cr, CV_32F, 255.0);
-		//cb.convertTo(cb, CV_32F, 255.0);
-		//cb.convertTo(cb, CV_32F, 1.0 / 255.0);
-		//cr.convertTo(cr, CV_32F, 1.0 / 255.0);
 	
-		//Mat R;
-		//pow((cr), 2.0, R);
-		//s.convertTo(s, CV_32FC1);
 		Mat powcr;
 		pow(cr, 2, powcr);
 
-		//cout << R.size() << endl;
-		//cout << powcr << endl;
 		int rows = powcr.rows;
 		int cols = powcr.cols;
 		Mat result = cb;
 		int maxi = max(rows, cols);
 		int mini = min(rows, cols);
 	
-		//invert(cb, inverted, cv::DECOMP_SVD);
-		//resize(cr, cr, cvSize(maxi, maxi));
-		//resize(cb, cb, cvSize(maxi, maxi));
-		//cb = abs(cb);
-		//cout << inverted << endl;
-		//	
-		//Mat xx = cb.reshape(1, maxi);
-		//xx.convertTo(xx, CV_32F);
-		//Mat invcb = xx.inv(DECOMP_LU);
-		//cv::solve(cr, cb, result, DECOMP_LU);
-
-
-
+	
 		Scalar  ss = sum(sum(powcr));
 		double ee = ss[0];
 
@@ -336,12 +393,7 @@ void another_eye_map(Mat I)
 		Point minLoc;
 		Point maxLoc;
 
-/*		minMaxLoc(Mouthmap, &minVal, &maxVal, &minLoc, &maxLoc);
-		Mouthmap = Mouthmap / maxVal;
 
-
-		minMaxLoc(EnLip, &minVal, &maxVal, &minLoc, &maxLoc);
-		EnLip = EnLip / maxVal;*/
 
 		imshow("mouth map", Mouthmap);
 		waitKey();
@@ -373,9 +425,7 @@ void another_eye_map(Mat I)
 		waitKey(0);
 		
 		Mat x = Mouthmap;
-		/*
-		imshow("  image", dst);
-		waitKey(0);*/
+		
 		/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		dst.convertTo(dst, CV_8U);
@@ -407,20 +457,11 @@ void mouth_map(Mat I)
 		//Mat img = imread("ssss.png");
 		Mat ttt = I;
 
-		//ttt.convertTo(ttt, CV_32FC3);
+		
 		vector<Mat> channells1;
 		cv::Mat iycbcr ;
-		/*split(ttt, channells1);
-		Mat I0 = channells1[0];
-		Mat I1 = channells1[1];
-		Mat I2 = channells1[2];
-		I0.convertTo(I0, CV_32FC1);
-		I1.convertTo(I1, CV_32FC1);
-		I2.convertTo(I2, CV_32FC1);
-		I0 = I0 / 255.0;
-		I1 = I1 / 255.0;
-		I2 = I2 / 255.0;*/
-		//Mat iycbcr;
+		
+		
 		cvtColor(ttt, iycbcr, CV_BGR2YCrCb);
 		iycbcr.convertTo(iycbcr, CV_32FC3, 1.0 / 255.0);
 		vector<Mat> channels1;
@@ -428,18 +469,7 @@ void mouth_map(Mat I)
 		Mat y = channels1[0];
 		Mat cr = channels1[1];
 		Mat cb = channels1[2];
-		//cout << " y value 0 " << y.at<uchar>(0, 0) << endl;
-
-		//cout << " y value 0 " << y.at<float>(0, 0) << endl;
-		//y.convertTo(y, CV_32FC1);
-		//cr.convertTo(cr, CV_32FC1);
-		//cb.convertTo(cb, CV_32FC1);
-		//y = 0.299  *I2 + 0.587 *I1 + 0.114 *I0 + 16;
-		//cb = 0.148* I2 - 0.291*  I1 + 0.439 * I0 +128;
-		//cr = 0.439 *I2 - 0.368 * I1 - 0.071 * I0 +128;
-		//cout << " y value 0 " << y.at<uchar>(0, 0) << endl;
-
-		//cout << " y value 0 " << y.at<float>(0, 0) << endl;
+	
 		cv::Mat fullImageHSV = cv::Mat::zeros(I.size(), CV_32FC3);
 
 
@@ -450,40 +480,21 @@ void mouth_map(Mat I)
 		Mat hue = channels[0];
 		Mat s = channels[1];
 
-		//	normalize(cb, cb, 1.0, 0.0, NORM_MINMAX, CV_32F);
-			//normalize(cr, cr, 1.0, 0.0, NORM_MINMAX, CV_32F);
-			//cr.convertTo(cr, CV_32F, 255.0);
-			//cb.convertTo(cb, CV_32F, 255.0);
-			//cb.convertTo(cb, CV_32F, 1.0 / 255.0);
-			//cr.convertTo(cr, CV_32F, 1.0 / 255.0);
+		
 		cout << cb.at<float>(0, 0) << endl;
 		cout << cr.at<float>(0, 0) << endl;
-		//Mat R;
-		//pow((cr), 2.0, R);
+	
 		s.convertTo(s, CV_32FC1);
 		Mat powcr;
 		pow(cr, 2, powcr);
 		
-		//cout << R.size() << endl;
-		//cout << powcr << endl;
+		
 		int rows = powcr.rows;
 		int cols = powcr.cols;
 		Mat result=cb;
 		int maxi = max(rows, cols);
 		int mini= min(rows, cols);
-		//cv::Mat inverted(cols, rows, CV_32FC1);
-		//invert(cb, inverted, cv::DECOMP_SVD);
-		//resize(cr, cr, cvSize(maxi, maxi));
-		//resize(cb, cb, cvSize(maxi, maxi));
-		//cb = abs(cb);
-		//cout << inverted << endl;
-	//	
-		//Mat xx = cb.reshape(1, maxi);
-		//xx.convertTo(xx, CV_32F);
-		//Mat invcb = xx.inv(DECOMP_LU);
-		//cv::solve(cr, cb, result, DECOMP_LU);
-		
-		
+			
 
 		Scalar  ss = sum(sum(powcr));
 		double ee = ss[0];
@@ -523,7 +534,7 @@ void mouth_map(Mat I)
 		Mat dst;
 		int morph_operator = 0;
 		int operation = morph_operator + 5;
-		//cv::Mat se = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2 * 25- 1, 2 * 25 - 1));
+		
 		Mat mat = Mat::ones(9, 9, CV_8U);
 
 		mat.at<uchar>(0, 0) = 0;
@@ -568,11 +579,97 @@ void mouth_map(Mat I)
 
 		imshow(" threshold image otus", img_bw);
 		waitKey(0);
-//////////////////////////////////////////////////////
-		cv::threshold(dst, img_bw, thresh, 255, CV_THRESH_BINARY );
 
-		imshow(" ther image", img_bw);
+
+
+
+
+
+
+
+
+
+
+		Mat stats, centroids, labelImage;
+		int nLabels = connectedComponentsWithStats(img_bw, labelImage, stats, centroids, 8, CV_32S);
+		
+		for (int label = 1; label < nLabels; ++label) { //label  0 is the background
+
+
+			cout << "area del component: " << label << "-> " << stats.at<int>(label, CC_STAT_AREA) << endl;
+			
+		}
+		Mat surfSup = stats.col(4) <500 & stats.col(4) >100;
+
+		Mat mask(labelImage.size(), CV_8UC1, Scalar(0));
+		for (int i = 1; i < nLabels; i++)
+		{
+			if (surfSup.at<uchar>(i, 0))
+			{
+				mask = mask | (labelImage == i);
+			}
+		}
+		Mat r(img_bw.size(), CV_8UC1, Scalar(0));
+		img_bw.copyTo(r, mask);
+
+
+		imshow("Result mouth", r);
+		waitKey();
+
+		vector<vector<cv::Point>> contours;
+	
+
+		vector<Vec4i> hierarchy;
+
+		Mat drawing = Mat::zeros(r.size(), CV_8UC3);
+		findContours(r, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+		vector<vector<pair<int, int>>> lip_w_h(contours.size());
+		vector<RotatedRect> minRect(contours.size());
+		vector<RotatedRect> minEllipse(contours.size());
+		for (int i = 0; i < contours.size(); i++)
+		{
+			minRect[i] = minAreaRect(Mat(contours[i]));
+			RotatedRect box = minAreaRect(Mat(contours[i]));
+			lip_w_h[i].push_back({ box.size.width ,box.size.height });
+			if (contours[i].size() > 5)
+			{
+				minEllipse[i] = fitEllipse(Mat(contours[i]));
+			}
+		}
+		RNG rng(12345);
+		/// Draw contours + rotated rects + ellipses
+		//	Mat drawing = Mat::zeros(threshold_output.size(), CV_8UC3);
+
+		vector<vector<pair<int, int>>> lip_rect(contours.size());
+		vector<vector<pair<int, int>>> lip_ellip(contours.size());
+		for (int i = 0; i< contours.size(); i++)
+		{
+			Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
+			// contour
+			drawContours(drawing, contours, i, color, 1, 8, vector<Vec4i>(), 0, Point());
+			// ellipse
+			ellipse(drawing, minEllipse[i], color, 2, 8);
+			//faces_ellip[i].push_back({ minEllipse[i]. ,minEllipse[i].y });
+			// rotated rectangle
+			Point2f rect_points[4]; minRect[i].points(rect_points);
+			for (int j = 0; j < 4; j++)
+			{
+				line(drawing, rect_points[j], rect_points[(j + 1) % 4], color, 1, 8);
+				lip_rect[i].push_back({ rect_points[j].x ,rect_points[j].y });
+			}
+			for (size_t cP = 0; cP < contours[i].size(); cP++)
+			{
+				Point currentContourPixel = contours[i][cP];
+				lip_ellip[i].push_back({ currentContourPixel.x ,currentContourPixel.y });
+				// do whatever you want
+			}
+		}
+
+
+		
+		imshow("Contours lips", drawing);
 		waitKey(0);
+
 	}
 	catch (cv::Exception & e) {
 		cerr << e.msg << endl; // output exception message
@@ -642,8 +739,7 @@ void face_detection_manually()
 
 		cout << cb.at<float>(0, 0) << endl;
 		cout << cr.at<float>(0, 0) << endl;
-		//	 cb= 0.148* hue - 0.291*  sat + 0.439 * v + 128;
-		// cr = 0.439 *hue - 0.368 * sat - 0.071 * v + 128;
+	
 		Mat segment = cv::Mat::zeros(hue.size(), CV_32FC1);
 		int cnt = 0;
 		for (int i = 0; i<rows; i++)
@@ -659,14 +755,9 @@ void face_detection_manually()
 			}
 		cout << cnt << endl;
 
-		//vector<Mat> channelsimgbin;
-		//	split(im, channelsimgbin);
+		
 		Mat im0;
-		//channelsimgbin[0].convertTo(channelsimgbin[0], CV_32FC3);
-		//segment.convertTo(segment, CV_32FC3);
-
-
-		//im0 = channelsimgbin[0];
+		
 
 		Mat  im1;
 		Mat  im2;
@@ -737,23 +828,28 @@ void face_detection_manually()
 		waitKey(0);
 
 
-		//segment.convertTo(segment, CV_8S);
+		
 		
 		erodee.convertTo(erodee, CV_8U);
 		cout << erodee.channels() << endl;
 		
-		//CV_Assert(r.type() == CV_8UC1);
+	
 		Mat dst;
 		vector<vector<cv::Point>> contours;
+		
 		vector<Vec4i> hierarchy;
 
-		findContours(erodee, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+		findContours(erodee, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
 		CvScalar color = cvScalar(255);
 		dst = Mat::zeros(erodee.size(), CV_8UC1);
 
+	
+
 		for (int i = 0; i<contours.size(); i++)
 		{
+			
 			drawContours(dst, contours, i, color, -1, 8, hierarchy, 0, cv::Point());
+			
 		}
 		namedWindow("Contours", CV_WINDOW_AUTOSIZE);
 		medianBlur(dst, dst, (5, 5));
@@ -772,7 +868,7 @@ void face_detection_manually()
 
 		waitKey();
 
-		//erodee1.convertTo(erodee1, CV_8S);
+		
 		Mat stats, centroids, labelImage;
 		int nLabels = connectedComponentsWithStats(erodee1, labelImage, stats, centroids, 8, CV_32S);
 		Mat mask(labelImage.size(), CV_8UC1, Scalar(0));
@@ -803,18 +899,31 @@ void face_detection_manually()
 		vector<Mat> channels11;
 		split(r, channels11);
 		Mat ro = channels11[0];
-		
-		//to do and face with contour
-		/*ro.convertTo(ro, CV_32F);
-		I0 = I0*ro;
-		I1 = I1*ro;
-		I2 = I2*ro;*/
+				
 		I0.convertTo(I0, CV_8U);
 		I1.convertTo(I1, CV_8U);
 		I2.convertTo(I2, CV_8U);
+		int row = ro.rows;
+		int col = ro.cols;
+		Mat roinv(row, col, CV_8U, Scalar(255, 255, 255));
+		bitwise_not(ro, roinv);
+		imshow("Result inverse", roinv);
+		waitKey();
+		Mat I01, I02, I03;
+		bitwise_and(I0, roinv, I01);
+		bitwise_and(I1, roinv, I02);
+		bitwise_and(I2, roinv, I03);
+
 		bitwise_and(I0, ro,I0);
 		bitwise_and(I1, ro, I1);
 		bitwise_and(I2, ro, I2);
+
+		bitwise_or(I0, roinv, I0);
+		bitwise_or(I1, roinv, I1);
+		bitwise_or(I2, roinv, I2);
+
+	
+
 		vector<Mat> channelorigi;
 		channelorigi.push_back(I0);
 		channelorigi.push_back(I1);
@@ -822,16 +931,85 @@ void face_detection_manually()
 		Mat out;
 		merge(channelorigi, out);
 		imshow("extract face", out);
+		contours.clear();
+		hierarchy.clear();
+		Mat threshold_output;
+		
 
+		
+		threshold(r, threshold_output, 0, 255, THRESH_BINARY);
+	
+		imshow("canny", threshold_output);
+		waitKey(0);
+		
+		Mat drawing = Mat::zeros(threshold_output.size(), CV_8UC3);
+		findContours(threshold_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+		vector<vector<pair<int, int>>> faces_w_h(contours.size());
+		vector<RotatedRect> minRect(contours.size());
+		vector<RotatedRect> minEllipse(contours.size());
+		for (int i = 0; i < contours.size(); i++)
+		{
+		minRect[i] = minAreaRect(Mat(contours[i]));
+		RotatedRect box = minAreaRect(Mat(contours[i]));
+		faces_w_h[i].push_back({ box.size.width ,box.size.height });
+		
+		if (contours[i].size() > 5)
+		{
+		minEllipse[i] = fitEllipse(Mat(contours[i]));
+		}
+		}
+		RNG rng(12345);
+		/// Draw contours + rotated rects + ellipses
+		
 
+		vector<vector<pair<int, int>>> faces_rect(contours.size());
+		vector<vector<pair<int, int>>> faces_ellip(contours.size());
+		int w, h;
 
+		//RotatedRect box = minAreaRect(pts);
 
+		// Be sure that largest side is the height
+		
+		for (int i = 0; i< contours.size(); i++)
+		{
+		Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
+		// contour
+		drawContours(drawing, contours, i, color, 1, 8, vector<Vec4i>(), 0, Point());
+		// ellipse
+		ellipse(drawing, minEllipse[i], color, 2, 8);
+		
+		// rotated rectangle
+		Point2f rect_points[4]; minRect[i].points(rect_points);
+		
+
+		
+		for (int j = 0; j < 4; j++)
+		{
+			line(drawing, rect_points[j], rect_points[(j + 1) % 4], color, 1, 8);
+			
+			faces_rect[i].push_back({ rect_points[j].x ,rect_points[j].y });
+		}
+		for (size_t cP = 0; cP < contours[i].size(); cP++)
+		{
+			Point currentContourPixel = contours[i][cP];
+			
+			faces_ellip[i].push_back({ currentContourPixel.x ,currentContourPixel.y });
+			// do whatever you want
+		}
+		}
+		
+
+		//namedWindow("Contours again", CV_WINDOW_AUTOSIZE);
+		imshow("Contours again", drawing);
 		waitKey(0);
 
-		eye_map(out);
-	//	mouth_map(out);
+		//eye_map(out);
+		mouth_map(out);
 		///////////////////////////////////works better than eye map so use it/////////////////////
 		//another_eye_map(out);
+
+
+
 
 
 	}
