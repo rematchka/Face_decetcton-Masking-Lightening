@@ -71,5 +71,8 @@
     <Image Include="ssss.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="249669229010212.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

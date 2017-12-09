@@ -22,6 +22,23 @@ string nose_cascde_name = "haarcascade_mcs_nose.xml";
 CascadeClassifier face_cascade;
 CascadeClassifier eyes_cascade;
 CascadeClassifier nose_cascade;
+int minxf;
+int minyf;
+
+int minfex ;
+int minfey ;
+vector<vector<pair<int, int>>> faces_rect;
+vector<vector<pair<int, int>>> faces_ellip;
+vector<vector<pair<int, int>>> faces_w_h;
+vector<vector<pair<int, int>>> faces_x_y;
+vector<vector<pair<int, int>>> lip_rect;
+vector<vector<pair<int, int>>> lip_ellip;
+vector<vector<pair<int, int>>> lip_w_h;
+vector<vector<pair<int, int>>> eyes_w_h;
+vector<vector<pair<int, int>>> eyes_rect;
+vector<vector<pair<int, int>>> eyes_ellip;
+vector<vector<pair<int, int>>> eye_x_y;
+vector<vector<pair<int, int>>> lip_x_y;
 
 int isodata(Mat I)
 {
@@ -272,17 +289,24 @@ void eye_map(Mat  face_image)
 		
 
 		vector<Vec4i> hierarchy;
-
+		int minxe;
+		int minye;
 		Mat drawing = Mat::zeros(r.size(), CV_8UC3);
 		findContours(r, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
-		vector<vector<pair<int, int>>> eyes_w_h(contours.size());
+		 eyes_w_h.resize(contours.size());
 		vector<RotatedRect> minRect(contours.size());
 		vector<RotatedRect> minEllipse(contours.size());
 		for (int i = 0; i < contours.size(); i++)
 		{
 			minRect[i] = minAreaRect(Mat(contours[i]));
 			RotatedRect box = minAreaRect(Mat(contours[i]));
+			if (box.size.width > box.size.height)
+			{
+				swap(box.size.width, box.size.height);
+				//box.angle += 90.f;
+			}
 			eyes_w_h[i].push_back({ box.size.width ,box.size.height });
+
 			if (contours[i].size() > 5)
 			{
 				minEllipse[i] = fitEllipse(Mat(contours[i]));
@@ -292,10 +316,15 @@ void eye_map(Mat  face_image)
 		/// Draw contours + rotated rects + ellipses
 		//	Mat drawing = Mat::zeros(threshold_output.size(), CV_8UC3);
 
-		vector<vector<pair<int, int>>> eyes_rect(contours.size());
-		vector<vector<pair<int, int>>> eyes_ellip(contours.size());
+		 eyes_rect.resize(contours.size());
+		 eyes_ellip.resize(contours.size());
+		 eye_x_y.resize(contours.size());
+		
 		for (int i = 0; i< contours.size(); i++)
 		{
+
+			minxe = 100000000;
+			minye = 100000000;
 			Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
 			// contour
 			drawContours(drawing, contours, i, color, 1, 8, vector<Vec4i>(), 0, Point());
@@ -308,7 +337,10 @@ void eye_map(Mat  face_image)
 			{
 				line(drawing, rect_points[j], rect_points[(j + 1) % 4], color, 1, 8);
 				eyes_rect[i].push_back({ rect_points[j].x ,rect_points[j].y });
+				minxe = min(minxe, (int)rect_points[j].x);
+				minye = min(minye, (int)rect_points[j].y);
 			}
+			eye_x_y[i].push_back({ minxe ,minye });
 			for (size_t cP = 0; cP < contours[i].size(); cP++)
 			{
 				Point currentContourPixel = contours[i][cP];
@@ -588,7 +620,8 @@ void mouth_map(Mat I)
 
 
 
-
+		int minxl;
+		int minyl;
 
 		Mat stats, centroids, labelImage;
 		int nLabels = connectedComponentsWithStats(img_bw, labelImage, stats, centroids, 8, CV_32S);
@@ -623,13 +656,18 @@ void mouth_map(Mat I)
 
 		Mat drawing = Mat::zeros(r.size(), CV_8UC3);
 		findContours(r, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
-		vector<vector<pair<int, int>>> lip_w_h(contours.size());
+		lip_w_h.resize(contours.size());
 		vector<RotatedRect> minRect(contours.size());
 		vector<RotatedRect> minEllipse(contours.size());
 		for (int i = 0; i < contours.size(); i++)
 		{
 			minRect[i] = minAreaRect(Mat(contours[i]));
 			RotatedRect box = minAreaRect(Mat(contours[i]));
+			if (box.size.width > box.size.height)
+			{
+				swap(box.size.width, box.size.height);
+				//box.angle += 90.f;
+			}
 			lip_w_h[i].push_back({ box.size.width ,box.size.height });
 			if (contours[i].size() > 5)
 			{
@@ -640,10 +678,15 @@ void mouth_map(Mat I)
 		/// Draw contours + rotated rects + ellipses
 		//	Mat drawing = Mat::zeros(threshold_output.size(), CV_8UC3);
 
-		vector<vector<pair<int, int>>> lip_rect(contours.size());
-		vector<vector<pair<int, int>>> lip_ellip(contours.size());
+		 lip_rect.resize(contours.size());
+		 lip_ellip.resize(contours.size());
+		 lip_x_y.resize(contours.size());
 		for (int i = 0; i< contours.size(); i++)
 		{
+
+
+			minxl= 100000000;
+			minyl = 100000000;
 			Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
 			// contour
 			drawContours(drawing, contours, i, color, 1, 8, vector<Vec4i>(), 0, Point());
@@ -656,7 +699,10 @@ void mouth_map(Mat I)
 			{
 				line(drawing, rect_points[j], rect_points[(j + 1) % 4], color, 1, 8);
 				lip_rect[i].push_back({ rect_points[j].x ,rect_points[j].y });
+				minxl = min(minxl, (int)rect_points[j].x);
+				minyl = min(minyl, (int)rect_points[j].y);
 			}
+			lip_x_y[i].push_back({ minxl ,minxl });
 			for (size_t cP = 0; cP < contours[i].size(); cP++)
 			{
 				Point currentContourPixel = contours[i][cP];
@@ -678,7 +724,7 @@ void mouth_map(Mat I)
 }
 void face_detection_manually()
 {
-	cv::Mat I = imread("FB_IMG_1463846848502.jpg", CV_LOAD_IMAGE_COLOR);
+	cv::Mat I = imread("download (4).jpg", CV_LOAD_IMAGE_COLOR);
 	if (I.empty())
 	{
 		std::cout << "!!! Failed imread(): image not found" << std::endl;
@@ -880,7 +926,7 @@ void face_detection_manually()
 			//colors[label] = Vec3b((rand() & 255), (rand() & 255), (rand() & 255));
 			maxi = max(maxi, stats.at<int>(label, CC_STAT_AREA));
 		}
-		Mat surfSup = stats.col(4) >= 30000;
+		Mat surfSup = stats.col(4) >= 21845;
 
 
 		for (int i = 1; i < nLabels; i++)
@@ -891,6 +937,9 @@ void face_detection_manually()
 			}
 		}
 		Mat r(erodee1.size(), CV_8UC1, Scalar(0));
+
+
+
 		erodee1.copyTo(r, mask);
 	
 	
@@ -944,14 +993,21 @@ void face_detection_manually()
 		
 		Mat drawing = Mat::zeros(threshold_output.size(), CV_8UC3);
 		findContours(threshold_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
-		vector<vector<pair<int, int>>> faces_w_h(contours.size());
+	     faces_w_h.resize(contours.size());
+		 faces_x_y.reserve(contours.size());
 		vector<RotatedRect> minRect(contours.size());
 		vector<RotatedRect> minEllipse(contours.size());
 		for (int i = 0; i < contours.size(); i++)
 		{
 		minRect[i] = minAreaRect(Mat(contours[i]));
 		RotatedRect box = minAreaRect(Mat(contours[i]));
+		if (box.size.width > box.size.height)
+		{
+			swap(box.size.width, box.size.height);
+			//box.angle += 90.f;
+		}
 		faces_w_h[i].push_back({ box.size.width ,box.size.height });
+		
 		
 		if (contours[i].size() > 5)
 		{
@@ -961,10 +1017,13 @@ void face_detection_manually()
 		RNG rng(12345);
 		/// Draw contours + rotated rects + ellipses
 		
-
-		vector<vector<pair<int, int>>> faces_rect(contours.size());
-		vector<vector<pair<int, int>>> faces_ellip(contours.size());
+		 faces_rect.resize(contours.size());
+	     faces_ellip.resize(contours.size());
+		 faces_x_y.resize(contours.size());
+		
 		int w, h;
+		minxf = 100000000;
+		minyf = 100000000;
 
 		//RotatedRect box = minAreaRect(pts);
 
@@ -972,6 +1031,9 @@ void face_detection_manually()
 		
 		for (int i = 0; i< contours.size(); i++)
 		{
+
+			minxf = 100000000;
+			minyf = 100000000;
 		Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
 		// contour
 		drawContours(drawing, contours, i, color, 1, 8, vector<Vec4i>(), 0, Point());
@@ -981,19 +1043,25 @@ void face_detection_manually()
 		// rotated rectangle
 		Point2f rect_points[4]; minRect[i].points(rect_points);
 		
-
+		minfex = 100000000;
+		minfey = 0;
 		
 		for (int j = 0; j < 4; j++)
 		{
 			line(drawing, rect_points[j], rect_points[(j + 1) % 4], color, 1, 8);
 			
-			faces_rect[i].push_back({ rect_points[j].x ,rect_points[j].y });
+			faces_rect[i].push_back({ rect_points[j].x ,rect_points[j ].y });
+			minxf = min(minxf, (int)rect_points[j ].x);
+			minyf = min(minyf, (int)rect_points[j].y);
 		}
+		faces_x_y[i].push_back({ minxf ,minyf });
 		for (size_t cP = 0; cP < contours[i].size(); cP++)
 		{
 			Point currentContourPixel = contours[i][cP];
 			
 			faces_ellip[i].push_back({ currentContourPixel.x ,currentContourPixel.y });
+			minfex = min(currentContourPixel.x,minfex);
+			minfey = max(currentContourPixel.y, minfey);
 			// do whatever you want
 		}
 		}
@@ -1004,7 +1072,7 @@ void face_detection_manually()
 		waitKey(0);
 
 		//eye_map(out);
-		mouth_map(out);
+		//mouth_map(out);
 		///////////////////////////////////works better than eye map so use it/////////////////////
 		//another_eye_map(out);
 
@@ -1724,12 +1792,229 @@ void face_detection_haar_cascade_mariam()
 		cerr << e.msg << endl; // output exception message
 	}
 }
+
+void flower_crown()
+{
+	face_detection_manually();
+	try
+	{
+
+
+		Mat flower = imread("flower_crown.png");
+
+
+		cv::Mat frame = imread("download (4).jpg", CV_LOAD_IMAGE_COLOR);
+		if (frame.empty())
+		{
+			std::cout << "!!! Failed imread(): image not found" << std::endl;
+			// don't let the execution continue, else imshow() will crash.
+		}
+		
+		for (size_t i = 0; i < faces_ellip.size(); i++)
+		{
+			
+			resize(flower, flower, cvSize(faces_w_h[i][i].first, 0.5*faces_w_h[i][i].second));
+			
+			int rows = flower.rows;
+			int cols = flower.cols;
+			for (int k = 0; k<rows; k++)
+				for (int l = 0; l<cols; l++)
+					for (int m = 0; m < 3; m++)
+					{
+
+						if (flower.at<Vec3b>(k, l)[m]>0)
+						{
+							frame.at<Vec3b>(abs(minyf +k-(0.15*faces_w_h[i][i].second)), abs(l + minxf))[m] = flower.at<Vec3b>(k, l)[m];
+
+							
+
+						}
+					}
+
+			imshow(" face crown", frame);
+			waitKey(0);
+
+
+		}
+
+
+	}
+
+	//nose detection
+	catch (cv::Exception & e)
+	{
+		cerr << e.msg << endl; // output exception message
+	}
+}
+
+
+void dog_filter()
+{
+	try
+	{
+		face_detection_manually();
+		Mat dog_nose = imread("dog_nose.png");
+		Mat dog_left_ear = imread("dog_left_ear.png");
+		Mat dog_right_ear = imread("dog_right_ear.png");
+
+
+		cv::Mat frame = imread("download (4).jpg", CV_LOAD_IMAGE_COLOR);
+		if (frame.empty())
+		{
+			std::cout << "!!! Failed imread(): image not found" << std::endl;
+			// don't let the execution continue, else imshow() will crash.
+		}
+		//	imshow("img", frame);
+		//waitKey();
+		
+		for (size_t i = 0; i < faces_ellip.size(); i++)
+		{
+			
+			resize(dog_left_ear, dog_left_ear, cvSize((faces_w_h[i][i].first *0.25), faces_w_h[i][i].second*0.5));
+			resize(dog_right_ear, dog_right_ear, cvSize((faces_w_h[i][i].first *0.25), faces_w_h[i][i].second*0.5));
+			int rowss = dog_left_ear.rows;
+			int colss = dog_left_ear.cols;
+			for (int k = 0; k<rowss; k++)
+				for (int l = 0; l<colss; l++)
+					for (int m = 0; m < 3; m++)
+					{
+
+						if (dog_left_ear.at<Vec3b>(k, l)[m]>0)
+						{
+							frame.at<Vec3b>(minyf + k - int(0.25*faces_w_h[i][i].second), l + minxf)[m] = dog_left_ear.at<Vec3b>(k, l)[m];
+
+
+
+						}
+					}
+
+
+			for (int k = 0; k<rowss; k++)
+				for (int l = 0; l<colss; l++)
+					for (int m = 0; m < 3; m++)
+					{
+
+						if (dog_right_ear.at<Vec3b>(k, l)[m]>0)
+						{
+							frame.at<Vec3b>(minyf + k - int(0.25*faces_w_h[i][i].second), minxf + l + faces_w_h[i][i].first - colss)[m] = dog_right_ear.at<Vec3b>(k, l)[m];
+
+
+
+						}
+					}	
+			
+
+
+
+
+
+		}
+
+
+
+
+
+		imshow("dog_filter", frame);
+		waitKey(0);
+
+
+
+	}
+
+
+
+
+	//nose detection
+	catch (cv::Exception & e)
+	{
+		cerr << e.msg << endl; // output exception message
+	}
+}
+
+
+void hat_moustache()
+{
+
+	try
+	{
+
+		Mat hat = imread("cowboy_hat.png");
+
+		face_detection_manually();
+		cv::Mat frame = imread("download (4).jpg", CV_LOAD_IMAGE_COLOR);
+		if (frame.empty())
+		{
+			std::cout << "!!! Failed imread(): image not found" << std::endl;
+			// don't let the execution continue, else imshow() will crash.
+		}
+		//	imshow("img", frame);
+		//waitKey();
+		
+		for (size_t i = 0; i < faces_ellip.size(); i++)
+		{
+			//Point center(faces[i].x + faces[i].width / 2, faces[i].y + faces[i].height / 2);
+			//ellipse(frame, center, Size(faces[i].width / 2, faces[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4, 8, 0);
+			
+			resize(hat, hat, cvSize((faces_w_h[i][i].first + 1), (faces_w_h[i][i].second*0.5) + 1));
+			//flower.copyTo(frame(cv::Rect(faces[i].x, -faces[i].y+faces[i].height, faces[i].width, faces[i].height)));
+			int rows = hat.rows;
+			int cols = hat.cols;
+			for (int k = 0; k<rows; k++)
+				for (int l = 0; l<cols; l++)
+					for (int m = 0; m < 3; m++)
+					{
+
+						if (hat.at<Vec3b>(k, l)[m]<235)
+						{
+							frame.at<Vec3b>(abs(minyf + k - int(0.25*faces_w_h[i][i].second)), l + minxf)[m] = hat.at<Vec3b>(k, l)[m];
+
+
+
+						}
+					}
+
+
+
+			Mat mst = imread("moustache.png");
+			int mst_width = int(faces_w_h[i][i].first*0.4166666) + 1;
+			int	mst_height = int(faces_w_h[i][i].second*0.14285) + 1;
+
+
+
+			resize(mst, mst, cvSize(mst_width, mst_height));
+
+			for (int ii = (int(0.62857142857*faces_w_h[i][i].second)); ii<int(0.62857142857*faces_w_h[i][i].second) + mst_height; ii++)
+				for (int j = int(0.29166666666*faces_w_h[i][i].first); j< int(0.29166666666*faces_w_h[i][i].first) + mst_width; j++)
+					for (int k = 0; k < 3; k++)
+					{
+						if (mst.at<Vec3b>(ii - int(0.62857142857*faces_w_h[i][i].second), j - int(0.29166666666*faces_w_h[i][i].first))[k] < 235)
+							frame.at < Vec3b>(minyf + ii-0.055555*faces_w_h[i][i].second, minxf + j)[k] = mst.at<Vec3b>(ii - int(0.62857142857*faces_w_h[i][i].second), j - int(0.29166666666*faces_w_h[i][i].first))[k];
+
+					}
+
+
+			imshow(" hat moustache", frame);
+			waitKey(0);
+
+
+		}
+
+
+	}
+
+	//nose detection
+	catch (cv::Exception & e)
+	{
+		cerr << e.msg << endl; // output exception message
+	}
+
+}
 int main(int, char** argv)
 {
 	if (!face_cascade.load(face_cascade_name)) { printf("--(!)Error loading face cascade\n"); return -1; };
 	if (!eyes_cascade.load(eyes_cascade_name)) { printf("--(!)Error loading eyes cascade\n"); return -1; };
 	if(!nose_cascade.load(nose_cascde_name)) { printf("--(!)Error loading nose cascade\n"); return -1; };
-	face_detection_manually();
+	//face_detection_manually();
 	//face_detection_harr_cascade_mustache();
 	//face_detection_crown();
 	//face_detect_hat_mustache();
@@ -1739,6 +2024,9 @@ int main(int, char** argv)
 	//modified_white_patch(200);
 	//progressive(200, 100);
 	//face_detection_haar_cascade_mariam();
+	//flower_crown();
+	//dog_filter();
+	//hat_moustache();
 
 	
 	 return 0;

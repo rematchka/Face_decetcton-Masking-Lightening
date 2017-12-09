@@ -153,6 +153,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="20161223_163424.jpg" />
+    <Image Include="249669229010212.png" />
     <Image Include="cowboy_hat.png" />
     <Image Include="dog_filter.png" />
     <Image Include="dog_left_ear.png" />
