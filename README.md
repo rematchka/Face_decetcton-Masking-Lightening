@@ -5,3 +5,5 @@
 2-snap chat filters cpp file (implemented using haar cacade for face detection (next phase will be changed to use implemented face detection)).
 
 3-Lightening effects(colour constancy) matlab file, 2 algorithm grey world &while patch are  implemented in c++ file.
+
+opencv is used.
