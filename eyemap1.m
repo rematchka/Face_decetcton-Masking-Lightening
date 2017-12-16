@@ -1,4 +1,4 @@
-I=imread('FB_IMG_1463846848502.jpg');
+I=imread('gtttt.png');
 %I=imread(frame);
 EyeMap = rgb2ycbcr(I);
 temp1=0;
@@ -81,20 +81,20 @@ imshow(EyeMap);
 normalizedImage = uint8(255*mat2gray(EyeMap));
 figure
 imshow(normalizedImage);title('norm img')
-%iiiii=isodata(normalizedImage);
-%BW = im2bw(normalizedImage,iiiii);
+iiiii=isodata(normalizedImage);
+BW = im2bw(normalizedImage,iiiii);
 
 %figure
 %imshow(BW);title('isodata thersholding img')
 
-%normImage = mat2gray(EyeMap);
+normImage = mat2gray(EyeMap);
 normImage = im2double(EyeMap);
 
 %iiiii=isodata2(normImage);
 %BW = im2bw(normalizedImage,iiiii);
 
-%figure
-%imshow(BW);title('isodata thersholding img2')
+figure
+imshow(BW);title('isodata thersholding img2')
 
 level = graythresh(normImage);
 BW1 = normImage > level;
